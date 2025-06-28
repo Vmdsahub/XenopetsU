@@ -9,7 +9,6 @@ import { motion, useMotionValue, animate } from "framer-motion";
 import { PlayerShip } from "./PlayerShip";
 import { MapPoint } from "./MapPoint";
 import { playBarrierCollisionSound } from "../../utils/soundManager";
-import { useGameStore } from "../../store/gameStore";
 
 interface GalaxyMapProps {
   onPointClick: (pointId: string, pointData: any) => void;
@@ -160,9 +159,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   // Canvas ref para estrelas
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
-
-  // Game store for notifications
-  const { addNotification } = useGameStore();
 
   // Sistema de estrelas corrigido para escala -5000 a +5000
   const starData = useMemo(() => {
@@ -579,26 +575,18 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     }
   }, [mapX, mapY]);
 
-  // Função para mostrar notificação de colisão
+  // Função para mostrar notificação de colisão local
   const showCollisionNotification = useCallback(() => {
     const notificationId = Date.now();
     setCollisionNotification({ show: true, id: notificationId });
 
-    // Adiciona notificação ao sistema global
-    addNotification({
-      type: "warning",
-      title: "⚠️ Colisão Detectada!",
-      message: "Ei! A sua Xenoship mal aguenta a força da gravidade, esqueceu que ela é muito frágil pra explorar os cosmos?",
-      isRead: false,
-    });
-
-    // Remove a notificação local após 4 segundos
+    // Remove a notificação após 4 segundos
     setTimeout(() => {
       setCollisionNotification(prev => 
         prev.id === notificationId ? { show: false, id: 0 } : prev
       );
     }, 4000);
-  }, [addNotification]);
+  }, []);
 
   // Função para verificar colisão com barreira - versão robusta
   const checkBarrierCollision = useCallback(
@@ -1079,22 +1067,19 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Notificação de Colisão - Centralizada e Transparente */}
+      {/* Notificação de Colisão - Centralizada no topo do mapa */}
       {collisionNotification.show && (
         <motion.div
-          className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500/80 backdrop-blur-sm text-white p-4 rounded-2xl shadow-2xl border border-red-400/50 max-w-xs"
-          initial={{ opacity: 0, y: -50, scale: 0.9 }}
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500/20 backdrop-blur-sm text-white p-3 rounded-2xl shadow-2xl border border-red-400/30 max-w-xs"
+          initial={{ opacity: 0, y: -30, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -50, scale: 0.9 }}
+          exit={{ opacity: 0, y: -30, scale: 0.9 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <span className="text-xl">⚠️</span>
-              <h4 className="font-bold text-sm">Colisão Detectada!</h4>
-            </div>
             <p className="text-xs text-white/90 leading-relaxed">
-              Ei! A sua Xenoship mal aguenta a força da gravidade, esqueceu que ela é muito frágil pra explorar os cosmos?
+              <span className="font-semibold">⚠️ Ei!</span> A sua Xenoship mal aguenta a força da gravidade,<br />
+              esqueceu que ela é muito frágil pra explorar os cosmos?
             </p>
           </div>
         </motion.div>
