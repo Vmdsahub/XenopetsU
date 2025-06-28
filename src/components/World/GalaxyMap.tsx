@@ -331,11 +331,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
 
-    // Momentum constante quando há movimento
+    // Momentum suave baseado na direção do movimento
     if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
       const normalizedX = deltaX > 0 ? 1 : deltaX < 0 ? -1 : 0;
       const normalizedY = deltaY > 0 ? 1 : deltaY < 0 ? -1 : 0;
-      setVelocity({ x: normalizedX * 2, y: normalizedY * 2 });
+      setVelocity({ x: normalizedX * 0.5, y: normalizedY * 0.5 });
     }
 
     // Atualiza posição da nave
