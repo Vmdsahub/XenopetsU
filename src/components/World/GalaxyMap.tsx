@@ -150,37 +150,37 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     ];
 
     return {
-      // Camada de fundo - mais lenta, cobrindo toda área virtual
-      background: Array.from({ length: 300 }, (_, i) => ({
+      // Camada de fundo - mais densa
+      background: Array.from({ length: 800 }, (_, i) => ({
         id: i,
         x: Math.random() * WORLD_CONFIG.width,
         y: Math.random() * WORLD_CONFIG.height,
         size: 0.5 + Math.random() * 0.8,
-        opacity: 0.2 + Math.random() * 0.4,
+        opacity: 0.15 + Math.random() * 0.3,
         color: "#ffffff",
         speed: 0.1,
       })),
 
-      // Camada média
-      middle: Array.from({ length: 150 }, (_, i) => ({
+      // Camada média - mais densa
+      middle: Array.from({ length: 400 }, (_, i) => ({
         id: i,
         x: Math.random() * WORLD_CONFIG.width,
         y: Math.random() * WORLD_CONFIG.height,
         size: 0.8 + Math.random() * 1.2,
-        opacity: 0.4 + Math.random() * 0.5,
+        opacity: 0.3 + Math.random() * 0.4,
         color: "#ffffff",
         speed: 0.3,
       })),
 
-      // Camada frontal com estrelas coloridas
-      foreground: Array.from({ length: 50 }, (_, i) => ({
+      // Camada frontal com mais estrelas coloridas
+      foreground: Array.from({ length: 120 }, (_, i) => ({
         id: i,
         x: Math.random() * WORLD_CONFIG.width,
         y: Math.random() * WORLD_CONFIG.height,
-        size: 1 + Math.random() * 1.5,
-        opacity: 0.6 + Math.random() * 0.4,
+        size: 1 + Math.random() * 1.8,
+        opacity: 0.5 + Math.random() * 0.5,
         color:
-          Math.random() < 0.7
+          Math.random() < 0.5
             ? "#ffffff"
             : colors[Math.floor(Math.random() * colors.length)],
         speed: 0.6,
