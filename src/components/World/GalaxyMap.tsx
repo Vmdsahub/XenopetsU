@@ -596,7 +596,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         />
       </div>
 
-      {/* Painel de coordenadas detalhado */}
+      {/* Painel simplificado */}
       <motion.div
         className="absolute top-12 left-4 px-3 py-2 rounded-lg text-xs backdrop-blur-sm border bg-black/80 text-gray-300 border-gray-400/40 min-w-[200px]"
         initial={{ opacity: 0, x: -20 }}
@@ -604,37 +604,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         transition={{ duration: 0.3, delay: 0.1 }}
       >
         <div className="font-mono space-y-1">
-          <div className="text-cyan-400 font-semibold">Posição Real:</div>
-          <div>X: {shipPosition.x.toFixed(3)}</div>
-          <div>Y: {shipPosition.y.toFixed(3)}</div>
-
           <div className="text-amber-400 font-semibold mt-2">
             Movimento Visual:
           </div>
           <div>Map X: {mapX.get().toFixed(1)}</div>
           <div>Map Y: {mapY.get().toFixed(1)}</div>
 
-          <div className="text-green-400 font-semibold mt-2">Velocidade:</div>
-          <div>Vel X: {velocity.x.toFixed(3)}</div>
-          <div>Vel Y: {velocity.y.toFixed(3)}</div>
-
-          {nearbyPoint && (
-            <>
-              <div className="text-orange-400 font-semibold mt-2">
-                Proximidade:
-              </div>
-              <div className="text-xs">
-                {(() => {
-                  const point = GALAXY_POINTS.find((p) => p.id === nearbyPoint);
-                  if (!point) return "Nenhum";
-                  const distance = getToroidalDistance(shipPosition, point);
-                  return `${point.name} (${distance.toFixed(2)})`;
-                })()}
-              </div>
-            </>
-          )}
-
-          <div className="text-purple-400 font-semibold mt-2">Status:</div>
           <div>
             {isDragging
               ? "🚀 Navegando"
