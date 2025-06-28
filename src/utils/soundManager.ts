@@ -190,6 +190,49 @@ const tryAlternativePlay = (
 };
 
 /**
+ * Creates a collision sound using Web Audio API
+ */
+const playCollisionSound = (): Promise<void> => {
+  return new Promise((resolve) => {
+    try {
+      const audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Create a sharp collision sound (harsh, brief)
+      oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(
+        50,
+        audioContext.currentTime + 0.1,
+      );
+      oscillator.type = "sawtooth";
+
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(
+        0.15,
+        audioContext.currentTime + 0.01,
+      );
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime + 0.1,
+      );
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+
+      setTimeout(() => resolve(), 120);
+    } catch (error) {
+      console.warn("Web Audio API collision sound failed:", error);
+      resolve();
+    }
+  });
+};
+
+/**
  * Creates a notification sound using Web Audio API
  */
 const playNotificationBeep = (): Promise<void> => {
@@ -364,4 +407,10 @@ export const startEngineSound = (): void => {
 
 export const stopEngineSound = (): void => {
   engineSound.stop();
+};
+
+export const playBarrierCollisionSound = (): Promise<void> => {
+  return playCollisionSound().catch((error) => {
+    console.warn("Collision sound failed:", error.message);
+  });
 };

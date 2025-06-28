@@ -127,6 +127,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
   const [nearbyPoint, setNearbyPoint] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isColliding, setIsColliding] = useState(false);
+  const [sparks, setSparks] = useState<
+    Array<{ id: number; x: number; y: number; dx: number; dy: number }>
+  >([]);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -500,6 +504,63 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     };
   }, [shipRotation]);
 
+  // Função para criar faíscas de colisão
+  const createCollisionSparks = useCallback(
+    (collisionX: number, collisionY: number) => {
+      const newSparks = Array.from({ length: 8 }, (_, i) => ({
+        id: Date.now() + i,
+        x: collisionX,
+        y: collisionY,
+        dx: (Math.random() - 0.5) * 80,
+        dy: (Math.random() - 0.5) * 80,
+      }));
+
+      setSparks(newSparks);
+
+      // Remove faíscas após animação
+      setTimeout(() => setSparks([]), 600);
+    },
+    [],
+  );
+
+  // Função para verificar colisão com barreira - versão robusta
+  const checkBarrierCollision = useCallback(
+    (proposedMapX: number, proposedMapY: number) => {
+      // Limites da barreira: de -1200 a +1200 em X e Y (raio 1200px)
+      const barrierRadius = 1200;
+
+      // Calcula a distância absoluta do centro usando a fórmula euclidiana
+      const distanceFromCenter = Math.sqrt(
+        proposedMapX * proposedMapX + proposedMapY * proposedMapY,
+      );
+
+      // Só considera colisão se estiver claramente fora da barreira
+      // Adiciona uma margem mínima para evitar falsos positivos
+      const effectiveRadius = barrierRadius - 5; // Margem de 5px para suavizar
+
+      if (distanceFromCenter >= effectiveRadius) {
+        const canvas = canvasRef.current;
+        if (!canvas) return { isColliding: true, collisionPoint: null };
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Calcula o ângulo e ponto de colisão
+        const angle = Math.atan2(proposedMapY, proposedMapX);
+        const collisionX = centerX + Math.cos(angle) * effectiveRadius;
+        const collisionY = centerY + Math.sin(angle) * effectiveRadius;
+
+        return {
+          isColliding: true,
+          collisionPoint: { x: collisionX, y: collisionY },
+        };
+      }
+
+      return { isColliding: false, collisionPoint: null };
+    },
+    [],
+  );
+
   // Sistema de momentum mais suave usando interpolação
   useEffect(() => {
     if (
@@ -544,33 +605,27 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         let newX = proposedX;
         let newY = proposedY;
 
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const centerVisualX = canvas.width / 2;
-          const centerVisualY = canvas.height / 2;
+        const currentMapX = mapX.get();
+        const currentMapY = mapY.get();
+        const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+        const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+        const proposedMapX = currentMapX + deltaMapX;
+        const proposedMapY = currentMapY + deltaMapY;
 
-          const currentMapX = mapX.get();
-          const currentMapY = mapY.get();
-          const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
-          const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
-          const proposedMapX = currentMapX + deltaMapX;
-          const proposedMapY = currentMapY + deltaMapY;
-
-          const effectiveShipX = centerVisualX - proposedMapX;
-          const effectiveShipY = centerVisualY - proposedMapY;
-
-          const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio
-          const distanceFromCenter = Math.sqrt(
-            Math.pow(effectiveShipX - centerVisualX, 2) +
-              Math.pow(effectiveShipY - centerVisualY, 2),
-          );
-
-          if (distanceFromCenter > barrierRadius) {
-            // Para o momentum completamente e mantém posição atual
-            setIsDecelerating(false);
-            setVelocity({ x: 0, y: 0 });
-            return;
+        const collision = checkBarrierCollision(proposedMapX, proposedMapY);
+        if (collision.isColliding) {
+          // Ativa flash vermelho e faíscas
+          setIsColliding(true);
+          setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+          if (collision.collisionPoint) {
+            createCollisionSparks(
+              collision.collisionPoint.x,
+              collision.collisionPoint.y,
+            );
           }
+          setIsDecelerating(false);
+          setVelocity({ x: 0, y: 0 });
+          return;
         }
 
         setShipPosition({ x: newX, y: newY });
@@ -595,7 +650,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         }
       };
     }
-  }, [isDragging]);
+  }, [isDragging, mapX, mapY, checkBarrierCollision, createCollisionSparks]);
 
   // Função para calcular distância toroidal correta
   const getToroidalDistance = (
@@ -692,41 +747,30 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     let newY = proposedY;
     let allowMovement = true;
 
-    const canvas = canvasRef.current;
-    if (canvas) {
-      // Converte posição da nave para coordenadas visuais
-      const centerVisualX = canvas.width / 2;
-      const centerVisualY = canvas.height / 2;
+    // Calcula posição visual proposta baseada no movimento do mapa
+    const currentMapX = mapX.get();
+    const currentMapY = mapY.get();
+    const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+    const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+    const proposedMapX = currentMapX + deltaMapX;
+    const proposedMapY = currentMapY + deltaMapY;
 
-      // Calcula posição visual proposta baseada no movimento do mapa
-      const currentMapX = mapX.get();
-      const currentMapY = mapY.get();
-      const deltaMapX = (shipPosRef.current.x - proposedX) * 12; // Inverte o cálculo do movimento
-      const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
-      const proposedMapX = currentMapX + deltaMapX;
-      const proposedMapY = currentMapY + deltaMapY;
-
-      // A posição efetiva da nave em relação ao centro é o inverso do movimento do mapa
-      const effectiveShipX = centerVisualX - proposedMapX;
-      const effectiveShipY = centerVisualY - proposedMapY;
-
-      const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio (2x maior)
-      const distanceFromCenter = Math.sqrt(
-        Math.pow(effectiveShipX - centerVisualX, 2) +
-          Math.pow(effectiveShipY - centerVisualY, 2),
-      );
-
-      // Se ultrapassar a barreira, bloqueia completamente
-      if (distanceFromCenter > barrierRadius) {
-        // Não permite o movimento - mantém posição atual
-        newX = shipPosRef.current.x;
-        newY = shipPosRef.current.y;
-        allowMovement = false;
-
-        // Para todo movimento
-        setVelocity({ x: 0, y: 0 });
-        setIsDecelerating(false);
+    const collision = checkBarrierCollision(proposedMapX, proposedMapY);
+    if (collision.isColliding) {
+      // Ativa flash vermelho e faíscas
+      setIsColliding(true);
+      setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+      if (collision.collisionPoint) {
+        createCollisionSparks(
+          collision.collisionPoint.x,
+          collision.collisionPoint.y,
+        );
       }
+      newX = shipPosRef.current.x;
+      newY = shipPosRef.current.y;
+      allowMovement = false;
+      setVelocity({ x: 0, y: 0 });
+      setIsDecelerating(false);
     }
 
     setShipPosition({ x: newX, y: newY });
@@ -809,36 +853,29 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       let newY = proposedY;
       let allowMovement = true;
 
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const centerVisualX = canvas.width / 2;
-        const centerVisualY = canvas.height / 2;
+      const currentMapX = mapX.get();
+      const currentMapY = mapY.get();
+      const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+      const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+      const proposedMapX = currentMapX + deltaMapX;
+      const proposedMapY = currentMapY + deltaMapY;
 
-        const currentMapX = mapX.get();
-        const currentMapY = mapY.get();
-        const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
-        const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
-        const proposedMapX = currentMapX + deltaMapX;
-        const proposedMapY = currentMapY + deltaMapY;
-
-        const effectiveShipX = centerVisualX - proposedMapX;
-        const effectiveShipY = centerVisualY - proposedMapY;
-
-        const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio
-        const distanceFromCenter = Math.sqrt(
-          Math.pow(effectiveShipX - centerVisualX, 2) +
-            Math.pow(effectiveShipY - centerVisualY, 2),
-        );
-
-        if (distanceFromCenter > barrierRadius) {
-          // Não permite o movimento - mantém posição atual
-          newX = shipPosRef.current.x;
-          newY = shipPosRef.current.y;
-          allowMovement = false;
-
-          setVelocity({ x: 0, y: 0 });
-          setIsDecelerating(false);
+      const collision = checkBarrierCollision(proposedMapX, proposedMapY);
+      if (collision.isColliding) {
+        // Ativa flash vermelho e faíscas
+        setIsColliding(true);
+        setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+        if (collision.collisionPoint) {
+          createCollisionSparks(
+            collision.collisionPoint.x,
+            collision.collisionPoint.y,
+          );
         }
+        newX = shipPosRef.current.x;
+        newY = shipPosRef.current.y;
+        allowMovement = false;
+        setVelocity({ x: 0, y: 0 });
+        setIsDecelerating(false);
       }
 
       setShipPosition({ x: newX, y: newY });
@@ -895,7 +932,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       document.removeEventListener("mousemove", handleGlobalMouseMove);
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, [isDragging, mapX, mapY, shipRotation]);
+  }, [
+    isDragging,
+    mapX,
+    mapY,
+    shipRotation,
+    checkBarrierCollision,
+    createCollisionSparks,
+  ]);
 
   const resetShipPosition = () => {
     setShipPosition({ x: 50, y: 50 });
@@ -1000,11 +1044,61 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             width: "2400px", // Diâmetro 2400px = 1200px de raio (2x maior)
             height: "2400px",
             transform: "translate(-50%, -50%)",
-            border: "2px dashed rgba(255, 255, 255, 0.15)",
             borderRadius: "50%",
             zIndex: 5,
           }}
-        />
+        >
+          {/* Animação de rotação continua */}
+          <motion.div
+            className="w-full h-full rounded-full border-2 border-dashed"
+            style={{
+              borderColor: isColliding
+                ? "rgba(239, 68, 68, 0.9)"
+                : "rgba(255, 255, 255, 0.15)",
+            }}
+            animate={{
+              rotate: 360,
+            }}
+            transition={{
+              rotate: {
+                duration: 600, // Rotação muito mais lenta - 10 minutos por volta
+                repeat: Infinity,
+                ease: "linear",
+              },
+            }}
+          />
+
+          {/* Faíscas de colisão */}
+          {sparks.map((spark) => (
+            <motion.div
+              key={spark.id}
+              className="absolute w-2 h-2 bg-red-500 rounded-full pointer-events-none"
+              style={{
+                left: spark.x - 4, // Centrar a faísca
+                top: spark.y - 4,
+                boxShadow:
+                  "0 0 8px rgba(239, 68, 68, 1), 0 0 16px rgba(239, 68, 68, 0.5)",
+                zIndex: 10,
+              }}
+              initial={{
+                x: 0,
+                y: 0,
+                opacity: 1,
+                scale: 1,
+              }}
+              animate={{
+                x: spark.dx,
+                y: spark.dy,
+                opacity: 0,
+                scale: 0.1,
+              }}
+              transition={{
+                duration: 0.6,
+                ease: "easeOut",
+              }}
+            />
+          ))}
+        </div>
         {/* Renderiza apenas uma vez */}
         <div className="absolute inset-0">{renderPoints()}</div>
       </motion.div>
