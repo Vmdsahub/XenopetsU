@@ -650,7 +650,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     // Verifica colisão com barreira circular
     const centerX = WORLD_CONFIG.width / 2; // 100% (centro do mundo)
     const centerY = WORLD_CONFIG.height / 2; // 100% (centro do mundo)
-    const barrierRadius = 35; // Raio em unidades do mundo (35% de 200% = 70 unidades de raio)
+    const barrierRadius = 25; // Raio mais restritivo em unidades do mundo
 
     const distanceFromCenter = Math.sqrt(
       Math.pow(proposedX - centerX, 2) + Math.pow(proposedY - centerY, 2),
