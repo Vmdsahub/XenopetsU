@@ -138,8 +138,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const lastMoveTime = useRef(Date.now());
   const [hasMoved, setHasMoved] = useState(false);
 
-  // Sistema de estrelas com parallax cobrindo área virtual 200x200
-  const starLayers = useMemo(() => {
+  // Canvas ref para estrelas
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
+
+  // Sistema de estrelas otimizado com arrays tipados
+  const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
       "#F87171",
@@ -149,42 +153,69 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    return {
-      // Camada de fundo - mais densa
-      background: Array.from({ length: 800 }, (_, i) => ({
-        id: i,
-        x: Math.random() * WORLD_CONFIG.width,
-        y: Math.random() * WORLD_CONFIG.height,
-        size: 0.5 + Math.random() * 0.8,
-        opacity: 0.15 + Math.random() * 0.3,
-        color: "#ffffff",
-        speed: 0.1,
-      })),
+    // Função para criar estrela com seed determinística
+    const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
+      // Use seed para gerar posições consistentes
+      const rng = (s: number) => {
+        let x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+      };
 
-      // Camada média - mais densa
-      middle: Array.from({ length: 400 }, (_, i) => ({
-        id: i,
-        x: Math.random() * WORLD_CONFIG.width,
-        y: Math.random() * WORLD_CONFIG.height,
-        size: 0.8 + Math.random() * 1.2,
-        opacity: 0.3 + Math.random() * 0.4,
-        color: "#ffffff",
-        speed: 0.3,
-      })),
+      const baseConfig = {
+        bg: {
+          count: 400,
+          sizeMin: 0.5,
+          sizeMax: 1.0,
+          opacityMin: 0.1,
+          opacityMax: 0.3,
+          speed: 0.08,
+        },
+        mid: {
+          count: 200,
+          sizeMin: 0.8,
+          sizeMax: 1.5,
+          opacityMin: 0.2,
+          opacityMax: 0.5,
+          speed: 0.25,
+        },
+        fg: {
+          count: 80,
+          sizeMin: 1.2,
+          sizeMax: 2.2,
+          opacityMin: 0.4,
+          opacityMax: 0.8,
+          speed: 0.5,
+        },
+      }[layerType];
 
-      // Camada frontal com mais estrelas coloridas
-      foreground: Array.from({ length: 120 }, (_, i) => ({
-        id: i,
-        x: Math.random() * WORLD_CONFIG.width,
-        y: Math.random() * WORLD_CONFIG.height,
-        size: 1 + Math.random() * 1.8,
-        opacity: 0.5 + Math.random() * 0.5,
+      return {
+        x: rng(seed * 1.1) * WORLD_CONFIG.width,
+        y: rng(seed * 1.3) * WORLD_CONFIG.height,
+        size:
+          baseConfig.sizeMin +
+          rng(seed * 1.7) * (baseConfig.sizeMax - baseConfig.sizeMin),
+        opacity:
+          baseConfig.opacityMin +
+          rng(seed * 1.9) * (baseConfig.opacityMax - baseConfig.opacityMin),
         color:
-          Math.random() < 0.5
-            ? "#ffffff"
-            : colors[Math.floor(Math.random() * colors.length)],
-        speed: 0.6,
-      })),
+          layerType === "fg" && rng(seed * 2.1) > 0.6
+            ? colors[Math.floor(rng(seed * 2.3) * colors.length)]
+            : "#ffffff",
+        speed: baseConfig.speed,
+        isColorful: layerType === "fg" && rng(seed * 2.1) > 0.6,
+      };
+    };
+
+    return {
+      background: Array.from({ length: 400 }, (_, i) =>
+        createStar(i + 1000, "bg"),
+      ),
+      middle: Array.from({ length: 200 }, (_, i) =>
+        createStar(i + 2000, "mid"),
+      ),
+      foreground: Array.from({ length: 80 }, (_, i) =>
+        createStar(i + 3000, "fg"),
+      ),
     };
   }, []);
 
