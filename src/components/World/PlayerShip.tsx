@@ -23,22 +23,6 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      {/* Proximity glow effect */}
-      {isNearPoint && (
-        <motion.div
-          className="absolute inset-0 rounded-full border-2 border-green-400"
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.8, 0.3, 0.8],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      )}
-
       {/* Spaceship Image */}
       <motion.img
         src="https://cdn.builder.io/api/v1/image/assets%2F9f875574753c430c92586f7b0edc1f21%2Facc507d5cb7a48c1bebc0cdc1bb911ff?format=webp&width=800"
