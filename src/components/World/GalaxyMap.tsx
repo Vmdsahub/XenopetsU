@@ -596,21 +596,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         />
       </div>
 
-      {/* Painel simplificado */}
-      <motion.div
-        className="absolute top-12 left-4 px-3 py-2 rounded-lg text-xs backdrop-blur-sm border bg-black/80 text-gray-300 border-gray-400/40 min-w-[200px]"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <div className="font-mono space-y-1">
-          <div className="text-amber-400 font-semibold mt-2">
-            Movimento Visual:
-          </div>
-          <div>Map X: {mapX.get().toFixed(1)}</div>
-          <div>Map Y: {mapY.get().toFixed(1)}</div>
-        </div>
-      </motion.div>
+      {/* Coordenadas simplificadas na parte inferior */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/30 text-sm font-mono">
+        X: {shipPosition.x.toFixed(1)} Y: {shipPosition.y.toFixed(1)}
+      </div>
     </div>
   );
 };
