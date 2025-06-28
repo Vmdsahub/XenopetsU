@@ -553,106 +553,131 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Fundo de estrelas com parallax cobrindo área virtual */}
+      {/* Fundo de estrelas com parallax otimizado */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Camada de fundo - movimento mais lento */}
+        {/* Camada de fundo */}
         <motion.div
-          className="absolute w-[300%] h-[300%] -left-full -top-full"
+          className="absolute inset-0"
           style={{
             x: mapX.get() * starLayers.background[0]?.speed || 0,
             y: mapY.get() * starLayers.background[0]?.speed || 0,
           }}
         >
-          {starLayers.background.map((star) => {
-            // Converte coordenadas virtuais para posição visual
-            const visualX = (star.x / WORLD_CONFIG.width) * 300;
-            const visualY = (star.y / WORLD_CONFIG.height) * 300;
+          {starLayers.background
+            .filter((star) => {
+              // Renderiza apenas estrelas próximas à viewport
+              const offsetX = mapX.get() * starLayers.background[0]?.speed || 0;
+              const offsetY = mapY.get() * starLayers.background[0]?.speed || 0;
+              const starScreenX =
+                (star.x / WORLD_CONFIG.width) * 100 + offsetX * 0.01;
+              const starScreenY =
+                (star.y / WORLD_CONFIG.height) * 100 + offsetY * 0.01;
 
-            return (
+              return (
+                starScreenX > -10 &&
+                starScreenX < 110 &&
+                starScreenY > -10 &&
+                starScreenY < 110
+              );
+            })
+            .map((star) => (
               <div
                 key={`bg-${star.id}`}
                 className="absolute rounded-full"
                 style={{
-                  left: `${visualX}%`,
-                  top: `${visualY}%`,
+                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
+                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
                   width: `${star.size}px`,
                   height: `${star.size}px`,
                   backgroundColor: star.color,
                   opacity: star.opacity,
-                  boxShadow:
-                    star.color !== "#ffffff"
-                      ? `0 0 ${star.size * 2}px ${star.color}`
-                      : "none",
                 }}
               />
-            );
-          })}
+            ))}
         </motion.div>
 
         {/* Camada média */}
         <motion.div
-          className="absolute w-[300%] h-[300%] -left-full -top-full"
+          className="absolute inset-0"
           style={{
             x: mapX.get() * starLayers.middle[0]?.speed || 0,
             y: mapY.get() * starLayers.middle[0]?.speed || 0,
           }}
         >
-          {starLayers.middle.map((star) => {
-            const visualX = (star.x / WORLD_CONFIG.width) * 300;
-            const visualY = (star.y / WORLD_CONFIG.height) * 300;
+          {starLayers.middle
+            .filter((star) => {
+              const offsetX = mapX.get() * starLayers.middle[0]?.speed || 0;
+              const offsetY = mapY.get() * starLayers.middle[0]?.speed || 0;
+              const starScreenX =
+                (star.x / WORLD_CONFIG.width) * 100 + offsetX * 0.01;
+              const starScreenY =
+                (star.y / WORLD_CONFIG.height) * 100 + offsetY * 0.01;
 
-            return (
+              return (
+                starScreenX > -10 &&
+                starScreenX < 110 &&
+                starScreenY > -10 &&
+                starScreenY < 110
+              );
+            })
+            .map((star) => (
               <div
                 key={`mid-${star.id}`}
                 className="absolute rounded-full"
                 style={{
-                  left: `${visualX}%`,
-                  top: `${visualY}%`,
+                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
+                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
                   width: `${star.size}px`,
                   height: `${star.size}px`,
                   backgroundColor: star.color,
                   opacity: star.opacity,
-                  boxShadow:
-                    star.color !== "#ffffff"
-                      ? `0 0 ${star.size * 2}px ${star.color}`
-                      : "none",
                 }}
               />
-            );
-          })}
+            ))}
         </motion.div>
 
         {/* Camada frontal com estrelas coloridas */}
         <motion.div
-          className="absolute w-[300%] h-[300%] -left-full -top-full"
+          className="absolute inset-0"
           style={{
             x: mapX.get() * starLayers.foreground[0]?.speed || 0,
             y: mapY.get() * starLayers.foreground[0]?.speed || 0,
           }}
         >
-          {starLayers.foreground.map((star) => {
-            const visualX = (star.x / WORLD_CONFIG.width) * 300;
-            const visualY = (star.y / WORLD_CONFIG.height) * 300;
+          {starLayers.foreground
+            .filter((star) => {
+              const offsetX = mapX.get() * starLayers.foreground[0]?.speed || 0;
+              const offsetY = mapY.get() * starLayers.foreground[0]?.speed || 0;
+              const starScreenX =
+                (star.x / WORLD_CONFIG.width) * 100 + offsetX * 0.01;
+              const starScreenY =
+                (star.y / WORLD_CONFIG.height) * 100 + offsetY * 0.01;
 
-            return (
+              return (
+                starScreenX > -10 &&
+                starScreenX < 110 &&
+                starScreenY > -10 &&
+                starScreenY < 110
+              );
+            })
+            .map((star) => (
               <div
                 key={`fg-${star.id}`}
                 className="absolute rounded-full"
                 style={{
-                  left: `${visualX}%`,
-                  top: `${visualY}%`,
+                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
+                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
                   width: `${star.size}px`,
                   height: `${star.size}px`,
                   backgroundColor: star.color,
                   opacity: star.opacity,
                   boxShadow:
                     star.color !== "#ffffff"
-                      ? `0 0 ${star.size * 3}px ${star.color}66`
+                      ? `0 0 ${star.size * 4}px ${star.color}88`
                       : "none",
                 }}
               />
-            );
-          })}
+            ))}
         </motion.div>
       </div>
 
