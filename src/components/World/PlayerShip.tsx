@@ -20,8 +20,15 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       style={{ rotate: rotation }}
       animate={{
         scale: isDragging ? 1.1 : 1,
+        // Vibração sutil quando ligada (sempre ativa)
+        x: isDragging ? 0 : [0, 0.3, 0, -0.3, 0],
+        y: isDragging ? 0 : [0, -0.2, 0, 0.2, 0],
       }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      transition={{
+        scale: { type: "spring", stiffness: 300, damping: 30 },
+        x: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+        y: { duration: 1.8, repeat: Infinity, ease: "easeInOut" },
+      }}
     >
       {/* Spaceship Image */}
       <motion.img
@@ -33,17 +40,17 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
         }}
       />
 
-      {/* Ship trails - positioned at the back of the ship */}
-      {(isDragging || isDecelerating) && (
+      {/* Ship trails - apenas quando arrastando */}
+      {isDragging && (
         <>
           <motion.div
             className="absolute top-full left-1/2 w-0.5 h-4 bg-gradient-to-t from-transparent to-blue-400 transform -translate-x-1/2"
             animate={{
-              opacity: isDragging ? [0.3, 0.8, 0.3] : [0.8, 0.2, 0.8],
-              scaleY: isDragging ? [0.5, 1, 0.5] : [1, 0.3, 1],
+              opacity: [0.3, 0.8, 0.3],
+              scaleY: [0.5, 1, 0.5],
             }}
             transition={{
-              duration: isDragging ? 0.5 : 1.0,
+              duration: 0.5,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -51,49 +58,17 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
           <motion.div
             className="absolute top-full left-1/2 w-0.5 h-3 bg-gradient-to-t from-transparent to-cyan-300 transform -translate-x-1/2 translate-y-1"
             animate={{
-              opacity: isDragging ? [0.2, 0.6, 0.2] : [0.6, 0.1, 0.6],
-              scaleY: isDragging ? [0.3, 1, 0.3] : [1, 0.2, 1],
+              opacity: [0.2, 0.6, 0.2],
+              scaleY: [0.3, 1, 0.3],
             }}
             transition={{
-              duration: isDragging ? 0.3 : 0.8,
+              duration: 0.3,
               repeat: Infinity,
               ease: "easeInOut",
               delay: 0.1,
             }}
           />
         </>
-      )}
-
-      {/* Efeito de momentum - partículas sutis quando em desaceleração */}
-      {isDecelerating && (
-        <motion.div
-          className="absolute top-full left-1/2 transform -translate-x-1/2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-0.5 h-0.5 bg-blue-300 rounded-full"
-              style={{
-                left: `${(i - 1) * 3}px`,
-                top: `${i * 2 + 2}px`,
-              }}
-              animate={{
-                opacity: [0, 0.6, 0],
-                scale: [0, 1, 0],
-                y: [0, 8, 16],
-              }}
-              transition={{
-                duration: 1.2,
-                repeat: Infinity,
-                delay: i * 0.2,
-                ease: "easeOut",
-              }}
-            />
-          ))}
-        </motion.div>
       )}
     </motion.div>
   );

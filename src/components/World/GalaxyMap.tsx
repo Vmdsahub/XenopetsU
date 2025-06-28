@@ -127,18 +127,23 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const mapY = useMotionValue(0);
   const shipRotation = useMotionValue(0);
 
+  // Sistema de rotação suave
+  const targetRotation = useRef(0);
+  const lastRotationUpdate = useRef(0);
+
   // Estados para momentum/inércia
   const [velocity, setVelocity] = useState({ x: 0, y: 0 });
   const [isDecelerating, setIsDecelerating] = useState(false);
   const velocityRef = useRef({ x: 0, y: 0 });
   const lastMoveTime = useRef(Date.now());
+  const [hasMoved, setHasMoved] = useState(false);
 
-  // Estrelas fixas - mais estrelas para preencher todo o mapa
+  // Estrelas fixas - mais estrelas para preencher todo o mapa expandido
   const stars = useMemo(() => {
-    return Array.from({ length: 400 }, (_, i) => ({
+    return Array.from({ length: 800 }, (_, i) => ({
       id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
+      x: Math.random() * 150, // Expandido para 150% para cobrir além das bordas
+      y: Math.random() * 150,
       animationDelay: Math.random() * 3,
       animationDuration: 2 + Math.random() * 2,
       size: 0.5 + Math.random() * 1.5, // Tamanhos variados
@@ -186,6 +191,50 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   useEffect(() => {
     velocityRef.current = velocity;
   }, [velocity]);
+
+  // Sistema de rotação suave com interpolação adaptativa ao refresh rate
+  useEffect(() => {
+    let animationId: number;
+    let lastFrameTime = performance.now();
+
+    const smoothRotation = (currentTime: number) => {
+      const deltaTime = currentTime - lastFrameTime;
+      lastFrameTime = currentTime;
+
+      const currentAngle = shipRotation.get();
+      const target = targetRotation.current;
+
+      // Normaliza ângulos
+      let normalizedCurrent = ((currentAngle % 360) + 360) % 360;
+      let normalizedTarget = ((target % 360) + 360) % 360;
+
+      // Calcula diferença angular pelo caminho mais curto
+      let diff = normalizedTarget - normalizedCurrent;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+
+      // Interpolação adaptativa ao refresh rate (60fps, 120fps, 144fps, etc.)
+      // Factor baseado em 60fps como baseline (16.67ms)
+      const baseFrameTime = 16.67;
+      const timeAdjustedFactor = Math.min(
+        1,
+        (deltaTime / baseFrameTime) * 0.25,
+      );
+      const newAngle = currentAngle + diff * timeAdjustedFactor;
+
+      shipRotation.set(newAngle);
+
+      animationId = requestAnimationFrame(smoothRotation);
+    };
+
+    animationId = requestAnimationFrame(smoothRotation);
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [shipRotation]);
 
   // Sistema de momentum mais suave usando interpolação
   useEffect(() => {
@@ -294,6 +343,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
+    setHasMoved(false);
     lastMousePos.current = { x: e.clientX, y: e.clientY };
     e.preventDefault();
   };
@@ -337,10 +387,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     mapX.set(newMapX);
     mapY.set(newMapY);
 
-    // Rotação
-    if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 2) {
-      const angle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-      animate(shipRotation, angle, { duration: 0.1, ease: "easeOut" });
+    // Rotação responsiva com interpolação suave
+    if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
+      setHasMoved(true);
+      const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
+      targetRotation.current = newAngle;
+      lastRotationUpdate.current = Date.now();
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -349,7 +401,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    // Não zera a velocidade aqui - deixa o momentum continuar
+
+    // Se não moveu (apenas clique), para completamente
+    if (!hasMoved) {
+      setVelocity({ x: 0, y: 0 });
+      setIsDecelerating(false);
+    }
+
     localStorage.setItem(
       "xenopets-player-position",
       JSON.stringify(shipPosRef.current),
@@ -400,9 +458,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       mapX.set(newMapX);
       mapY.set(newMapY);
 
-      if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 2) {
-        const angle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-        animate(shipRotation, angle, { duration: 0.1, ease: "easeOut" });
+      if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
+        setHasMoved(true);
+        const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
+        targetRotation.current = newAngle;
+        lastRotationUpdate.current = Date.now();
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -411,7 +471,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
     const handleGlobalMouseUp = () => {
       setIsDragging(false);
-      // Não zera a velocidade aqui - deixa o momentum continuar
+
+      // Se não moveu (apenas clique), para completamente
+      if (!hasMoved) {
+        setVelocity({ x: 0, y: 0 });
+        setIsDecelerating(false);
+      }
+
       localStorage.setItem(
         "xenopets-player-position",
         JSON.stringify(shipPosRef.current),
@@ -475,7 +541,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     >
       {/* Camada 1 - Estrelas distantes (parallax lento) */}
       <div
-        className="absolute inset-0 opacity-60 pointer-events-none"
+        className="absolute -inset-1/4 opacity-60 pointer-events-none"
         data-star-layer="0"
       >
         {stars
@@ -497,7 +563,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       {/* Camada 2 - Estrelas médias (parallax médio) */}
       <div
-        className="absolute inset-0 opacity-75 pointer-events-none"
+        className="absolute -inset-1/4 opacity-75 pointer-events-none"
         data-star-layer="1"
       >
         {stars
@@ -519,7 +585,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       {/* Camada 3 - Estrelas próximas (parallax rápido) */}
       <div
-        className="absolute inset-0 opacity-90 pointer-events-none"
+        className="absolute -inset-1/4 opacity-90 pointer-events-none"
         data-star-layer="2"
       >
         {stars
