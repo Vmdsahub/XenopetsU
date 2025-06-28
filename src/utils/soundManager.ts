@@ -315,8 +315,6 @@ class EngineSound {
   private readonly MIN_PLAY_DURATION_MS = 100; // Duração mínima antes de parar
 
   start(): void {
-    const now = Date.now();
-
     // Se já está tocando, não inicia novamente
     if (this.isPlaying) {
       // Cancela qualquer timeout de parada pendente
@@ -327,12 +325,7 @@ class EngineSound {
       return;
     }
 
-    // Debounce - ignora chamadas muito frequentes APENAS se não parou recentemente
-    if (now - this.lastStartTime < this.START_DEBOUNCE_MS) {
-      return;
-    }
-
-    this.lastStartTime = now;
+    this.lastStartTime = Date.now();
 
     // Cancela qualquer timeout anterior
     if (this.startDebounceTimeout) {
