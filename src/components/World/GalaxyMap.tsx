@@ -372,7 +372,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 2) {
         const angle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-        animate(shipRotation, angle, { duration: 0.05 });
+        shipRotation.set(angle);
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
