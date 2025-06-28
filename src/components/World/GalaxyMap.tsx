@@ -8,6 +8,7 @@ import React, {
 import { motion, useMotionValue, animate } from "framer-motion";
 import { PlayerShip } from "./PlayerShip";
 import { MapPoint } from "./MapPoint";
+import { ShootingStars } from "./ShootingStars";
 import { playBarrierCollisionSound } from "../../utils/soundManager";
 
 interface GalaxyMapProps {
@@ -529,51 +530,56 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   );
 
   // Função para repelir o jogador
-  const repelPlayer = useCallback((collisionX: number, collisionY: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const repelPlayer = useCallback(
+    (collisionX: number, collisionY: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
 
-    // Calcula direção da repulsão (do centro da barreira para fora)
-    const repelDirectionX = collisionX - centerX;
-    const repelDirectionY = collisionY - centerY;
-    const distance = Math.sqrt(repelDirectionX * repelDirectionX + repelDirectionY * repelDirectionY);
+      // Calcula direção da repulsão (do centro da barreira para fora)
+      const repelDirectionX = collisionX - centerX;
+      const repelDirectionY = collisionY - centerY;
+      const distance = Math.sqrt(
+        repelDirectionX * repelDirectionX + repelDirectionY * repelDirectionY,
+      );
 
-    if (distance > 0) {
-      // Normaliza a direção e aplica força de repulsão
-      const normalizedX = repelDirectionX / distance;
-      const normalizedY = repelDirectionY / distance;
-      const repelForce = 15; // Força da repulsão
+      if (distance > 0) {
+        // Normaliza a direção e aplica força de repulsão
+        const normalizedX = repelDirectionX / distance;
+        const normalizedY = repelDirectionY / distance;
+        const repelForce = 15; // Força da repulsão
 
-      // Para o movimento atual imediatamente
-      setVelocity({ x: 0, y: 0 });
-      setIsDecelerating(false);
+        // Para o movimento atual imediatamente
+        setVelocity({ x: 0, y: 0 });
+        setIsDecelerating(false);
 
-      // Aplica repulsão ao mapa (movimento inverso)
-      const currentMapX = mapX.get();
-      const currentMapY = mapY.get();
-      
-      animate(mapX, currentMapX - normalizedX * repelForce, { 
-        duration: 0.3, 
-        ease: "easeOut" 
-      });
-      animate(mapY, currentMapY - normalizedY * repelForce, { 
-        duration: 0.3, 
-        ease: "easeOut" 
-      });
+        // Aplica repulsão ao mapa (movimento inverso)
+        const currentMapX = mapX.get();
+        const currentMapY = mapY.get();
 
-      // Atualiza posição da nave correspondentemente
-      const repelShipX = normalizedX * repelForce / 12;
-      const repelShipY = normalizedY * repelForce / 12;
-      
-      setShipPosition(prev => ({
-        x: wrap(prev.x + repelShipX, 0, WORLD_CONFIG.width),
-        y: wrap(prev.y + repelShipY, 0, WORLD_CONFIG.height)
-      }));
-    }
-  }, [mapX, mapY]);
+        animate(mapX, currentMapX - normalizedX * repelForce, {
+          duration: 0.3,
+          ease: "easeOut",
+        });
+        animate(mapY, currentMapY - normalizedY * repelForce, {
+          duration: 0.3,
+          ease: "easeOut",
+        });
+
+        // Atualiza posição da nave correspondentemente
+        const repelShipX = (normalizedX * repelForce) / 12;
+        const repelShipY = (normalizedY * repelForce) / 12;
+
+        setShipPosition((prev) => ({
+          x: wrap(prev.x + repelShipX, 0, WORLD_CONFIG.width),
+          y: wrap(prev.y + repelShipY, 0, WORLD_CONFIG.height),
+        }));
+      }
+    },
+    [mapX, mapY],
+  );
 
   // Função para mostrar notificação de colisão local
   const showCollisionNotification = useCallback(() => {
@@ -582,8 +588,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
     // Remove a notificação após 4 segundos
     setTimeout(() => {
-      setCollisionNotification(prev => 
-        prev.id === notificationId ? { show: false, id: 0 } : prev
+      setCollisionNotification((prev) =>
+        prev.id === notificationId ? { show: false, id: 0 } : prev,
       );
     }, 4000);
   }, []);
@@ -720,7 +726,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         }
       };
     }
-  }, [isDragging, mapX, mapY, checkBarrierCollision, createCollisionSparks, repelPlayer, showCollisionNotification]);
+  }, [
+    isDragging,
+    mapX,
+    mapY,
+    checkBarrierCollision,
+    createCollisionSparks,
+    repelPlayer,
+    showCollisionNotification,
+  ]);
 
   // Função para calcular distância toroidal correta
   const getToroidalDistance = (
@@ -1078,7 +1092,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         >
           <div className="text-center">
             <p className="text-xs text-white/90 leading-relaxed">
-              <span className="font-semibold">⚠️ Ei!</span> A sua Xenoship mal aguenta a força da gravidade,<br />
+              <span className="font-semibold">⚠️ Ei!</span> A sua Xenoship mal
+              aguenta a força da gravidade,
+              <br />
               esqueceu que ela é muito frágil pra explorar os cosmos?
             </p>
           </div>
