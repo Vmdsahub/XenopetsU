@@ -273,7 +273,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       return (h >>> 0) / 4294967296;
     };
 
-    // Gera estrelas dinamicamente baseado na regi��o visível
+    // Gera estrelas dinamicamente baseado na região visível
     const generateLayer = (density: number, speed: number, layer: number) => {
       // Calcula posição da câmera com parallax
       const cameraX = -currentMapX * speed;
@@ -902,6 +902,21 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           willChange: "transform", // otimização para GPU
         }}
       >
+        {/* Barreira circular fixa no centro do mapa */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
+            top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
+            width: "700px",
+            height: "700px",
+            transform: "translate(-50%, -50%)",
+            border: "2px dashed rgba(255, 255, 255, 0.15)",
+            borderRadius: "50%",
+            zIndex: 5,
+          }}
+        />
+
         {/* Renderiza apenas 3 cópias para melhor performance */}
         <div className="absolute inset-0">{renderPoints()}</div>
         <div
