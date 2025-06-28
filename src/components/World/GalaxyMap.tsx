@@ -142,7 +142,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas simples e efetivo
+  // Sistema de estrelas corrigido para escala -5000 a +5000
   const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -187,9 +187,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         },
       }[layerType];
 
+      // Escala real do mapa: -5000 a +5000 = 10000 unidades
+      // Expandimos para 20000 unidades para ter estrelas suficientes
+      const MAP_SCALE = 20000;
+
       return {
-        x: hash(seed * 11) * WORLD_CONFIG.width,
-        y: hash(seed * 13) * WORLD_CONFIG.height,
+        x: (hash(seed * 11) - 0.5) * MAP_SCALE,
+        y: (hash(seed * 13) - 0.5) * MAP_SCALE,
         size:
           baseConfig.sizeMin +
           hash(seed * 17) * (baseConfig.sizeMax - baseConfig.sizeMin),
@@ -206,13 +210,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     };
 
     return {
-      background: Array.from({ length: 1000 }, (_, i) =>
+      background: Array.from({ length: 1500 }, (_, i) =>
         createStar(i + 1000, "bg"),
       ),
-      middle: Array.from({ length: 500 }, (_, i) =>
+      middle: Array.from({ length: 800 }, (_, i) =>
         createStar(i + 2000, "mid"),
       ),
-      foreground: Array.from({ length: 200 }, (_, i) =>
+      foreground: Array.from({ length: 300 }, (_, i) =>
         createStar(i + 3000, "fg"),
       ),
     };
