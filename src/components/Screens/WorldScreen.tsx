@@ -46,17 +46,6 @@ export const WorldScreen: React.FC = () => {
               <div className="p-4">
                 <GalaxyMap onPointClick={handlePointClick} />
               </div>
-
-              {/* Instructions */}
-              <div className="p-4 bg-gray-50 border-t border-gray-100">
-                <div className="text-center text-sm text-gray-600">
-                  <p className="mb-2">🚀 Navegue arrastando o mapa</p>
-                  <p className="mb-2">
-                    🎯 Aproxime-se dos pontos para ativá-los
-                  </p>
-                  <p>🌍 Clique nos pontos para explorar</p>
-                </div>
-              </div>
             </motion.div>
           </motion.div>
         ) : (
