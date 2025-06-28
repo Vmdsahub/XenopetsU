@@ -192,15 +192,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     velocityRef.current = velocity;
   }, [velocity]);
 
-  // Sistema de rotação suave com interpolação adaptativa ao refresh rate
+  // Sistema de rotação suave
   useEffect(() => {
     let animationId: number;
-    let lastFrameTime = performance.now();
 
-    const smoothRotation = (currentTime: number) => {
-      const deltaTime = currentTime - lastFrameTime;
-      lastFrameTime = currentTime;
-
+    const smoothRotation = () => {
       const currentAngle = shipRotation.get();
       const target = targetRotation.current;
 
@@ -213,14 +209,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
 
-      // Interpolação adaptativa ao refresh rate (60fps, 120fps, 144fps, etc.)
-      // Factor baseado em 60fps como baseline (16.67ms)
-      const baseFrameTime = 16.67;
-      const timeAdjustedFactor = Math.min(
-        1,
-        (deltaTime / baseFrameTime) * 0.25,
-      );
-      const newAngle = currentAngle + diff * timeAdjustedFactor;
+      // Interpolação suave fixa
+      const newAngle = currentAngle + diff * 0.15;
 
       shipRotation.set(newAngle);
 
