@@ -977,11 +977,46 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             width: "2400px", // Diâmetro 2400px = 1200px de raio (2x maior)
             height: "2400px",
             transform: "translate(-50%, -50%)",
-            border: "2px dashed rgba(255, 255, 255, 0.15)",
             borderRadius: "50%",
             zIndex: 5,
           }}
-        />
+        >
+          {/* Animação de rotação continua */}
+          <motion.div
+            className="w-full h-full rounded-full border-2 border-dashed"
+            style={{
+              borderColor: isColliding
+                ? "rgba(239, 68, 68, 0.8)"
+                : "rgba(255, 255, 255, 0.15)",
+            }}
+            animate={{
+              rotate: 360,
+              borderColor: isColliding
+                ? [
+                    "rgba(239, 68, 68, 0.8)",
+                    "rgba(239, 68, 68, 0.3)",
+                    "rgba(239, 68, 68, 0.8)",
+                  ]
+                : "rgba(255, 255, 255, 0.15)",
+            }}
+            transition={{
+              rotate: {
+                duration: 20,
+                repeat: Infinity,
+                ease: "linear",
+              },
+              borderColor: isColliding
+                ? {
+                    duration: 0.15,
+                    repeat: 0,
+                    ease: "easeInOut",
+                  }
+                : {
+                    duration: 0,
+                  },
+            }}
+          />
+        </div>
         {/* Renderiza apenas uma vez */}
         <div className="absolute inset-0">{renderPoints()}</div>
       </motion.div>
