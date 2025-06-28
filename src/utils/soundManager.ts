@@ -327,3 +327,11 @@ export const playNotificationSound = (): Promise<void> => {
     });
   });
 };
+
+export const startEngineSound = (): void => {
+  engineSound.start();
+};
+
+export const stopEngineSound = (): void => {
+  engineSound.stop();
+};
