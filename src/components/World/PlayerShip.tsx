@@ -5,6 +5,7 @@ interface PlayerShipProps {
   rotation: MotionValue<number>;
   isNearPoint: boolean;
   isDragging: boolean;
+  isDecelerating?: boolean;
 }
 
 export const PlayerShip: React.FC<PlayerShipProps> = ({
