@@ -1005,20 +1005,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             zIndex: 5,
           }}
         />
-        {/* Renderiza apenas 3 cópias para melhor performance */}
+        {/* Renderiza apenas uma vez */}
         <div className="absolute inset-0">{renderPoints()}</div>
-        <div
-          className="absolute inset-0"
-          style={{ transform: "translateX(100%)" }}
-        >
-          {renderPoints()}
-        </div>
-        <div
-          className="absolute inset-0"
-          style={{ transform: "translateX(-100%)" }}
-        >
-          {renderPoints()}
-        </div>
       </motion.div>
 
       {/* Nave do jogador - fixa no centro */}
