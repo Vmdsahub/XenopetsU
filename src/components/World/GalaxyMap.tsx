@@ -138,7 +138,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const lastMoveTime = useRef(Date.now());
   const [hasMoved, setHasMoved] = useState(false);
 
-  // Sistema de estrelas com parallax
+  // Sistema de estrelas com parallax cobrindo área virtual 200x200
   const starLayers = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -150,11 +150,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     ];
 
     return {
-      // Camada de fundo - mais lenta
-      background: Array.from({ length: 150 }, (_, i) => ({
+      // Camada de fundo - mais lenta, cobrindo toda área virtual
+      background: Array.from({ length: 300 }, (_, i) => ({
         id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
+        x: Math.random() * WORLD_CONFIG.width,
+        y: Math.random() * WORLD_CONFIG.height,
         size: 0.5 + Math.random() * 0.8,
         opacity: 0.2 + Math.random() * 0.4,
         color: "#ffffff",
@@ -162,10 +162,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       })),
 
       // Camada média
-      middle: Array.from({ length: 80 }, (_, i) => ({
+      middle: Array.from({ length: 150 }, (_, i) => ({
         id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
+        x: Math.random() * WORLD_CONFIG.width,
+        y: Math.random() * WORLD_CONFIG.height,
         size: 0.8 + Math.random() * 1.2,
         opacity: 0.4 + Math.random() * 0.5,
         color: "#ffffff",
@@ -173,10 +173,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       })),
 
       // Camada frontal com estrelas coloridas
-      foreground: Array.from({ length: 25 }, (_, i) => ({
+      foreground: Array.from({ length: 50 }, (_, i) => ({
         id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
+        x: Math.random() * WORLD_CONFIG.width,
+        y: Math.random() * WORLD_CONFIG.height,
         size: 1 + Math.random() * 1.5,
         opacity: 0.6 + Math.random() * 0.4,
         color:
