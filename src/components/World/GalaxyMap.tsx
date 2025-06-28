@@ -142,7 +142,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas otimizado com arrays tipados
+  // Sistema de estrelas otimizado com arrays tipados - comportamento original
   const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -153,7 +153,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    // Função para criar estrela com seed determinística
+    // Função para criar estrela com seed determinística - original
     const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
       // Use seed para gerar posições consistentes
       const rng = (s: number) => {
@@ -163,7 +163,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       const baseConfig = {
         bg: {
-          count: 400,
+          count: 1000, // Aumentado para o mapa maior
           sizeMin: 0.5,
           sizeMax: 1.0,
           opacityMin: 0.1,
@@ -171,7 +171,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           speed: 0.08,
         },
         mid: {
-          count: 200,
+          count: 500,
           sizeMin: 0.8,
           sizeMax: 1.5,
           opacityMin: 0.2,
@@ -179,7 +179,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           speed: 0.25,
         },
         fg: {
-          count: 80,
+          count: 200,
           sizeMin: 1.2,
           sizeMax: 2.2,
           opacityMin: 0.4,
@@ -207,13 +207,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     };
 
     return {
-      background: Array.from({ length: 400 }, (_, i) =>
+      background: Array.from({ length: 1000 }, (_, i) =>
         createStar(i + 1000, "bg"),
       ),
-      middle: Array.from({ length: 200 }, (_, i) =>
+      middle: Array.from({ length: 500 }, (_, i) =>
         createStar(i + 2000, "mid"),
       ),
-      foreground: Array.from({ length: 80 }, (_, i) =>
+      foreground: Array.from({ length: 200 }, (_, i) =>
         createStar(i + 3000, "fg"),
       ),
     };
@@ -227,7 +227,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Função de renderização Canvas otimizada
+  // Função de renderização Canvas otimizada - comportamento original
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -243,7 +243,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
-    // Função para renderizar camada de estrelas
+    // Função para renderizar camada de estrelas - comportamento original
     const renderLayer = (stars: typeof starData.background, speed: number) => {
       stars.forEach((star) => {
         // Calcula posição com parallax
@@ -422,18 +422,18 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const newVelX = currentVel.x * friction;
         const newVelY = currentVel.y * friction;
 
-        // Movimento muito suave - dividindo por valores maiores
-        const deltaX = newVelX * 2; // Movimento mapa
-        const deltaY = newVelY * 2;
+        // Movimento ainda mais suave para evitar saltos
+        const deltaX = newVelX * 1.5; // Movimento mapa reduzido
+        const deltaY = newVelY * 1.5;
 
         // Atualiza posição da nave suavemente
         const newX = wrap(
-          shipPosRef.current.x - deltaX / 16,
+          shipPosRef.current.x - deltaX / 20, // Divisão maior para movimento mais suave
           0,
           WORLD_CONFIG.width,
         );
         const newY = wrap(
-          shipPosRef.current.y - deltaY / 16,
+          shipPosRef.current.y - deltaY / 20,
           0,
           WORLD_CONFIG.height,
         );
@@ -533,17 +533,21 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
 
-    // Momentum simples baseado no último movimento
+    // Momentum suavizado baseado no movimento
     if (deltaTime > 0) {
-      const velX = Math.max(-2, Math.min(2, deltaX * 0.1));
-      const velY = Math.max(-2, Math.min(2, deltaY * 0.1));
+      const velX = Math.max(-1.5, Math.min(1.5, deltaX * 0.08));
+      const velY = Math.max(-1.5, Math.min(1.5, deltaY * 0.08));
       setVelocity({ x: velX, y: velY });
     }
 
-    // Atualiza posição da nave
-    const newX = wrap(shipPosRef.current.x - deltaX / 8, 0, WORLD_CONFIG.width);
+    // Atualiza posição da nave de forma mais suave
+    const newX = wrap(
+      shipPosRef.current.x - deltaX / 12,
+      0,
+      WORLD_CONFIG.width,
+    );
     const newY = wrap(
-      shipPosRef.current.y - deltaY / 8,
+      shipPosRef.current.y - deltaY / 12,
       0,
       WORLD_CONFIG.height,
     );
@@ -554,8 +558,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     let newMapX = mapX.get() + deltaX;
     let newMapY = mapY.get() + deltaY;
 
-    // Wrap visual do mapa
-    const wrapThreshold = 2000;
+    // Wrap visual do mapa expandido
+    const wrapThreshold = 5000;
     if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
     if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
     if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
@@ -601,20 +605,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const deltaX = e.clientX - lastMousePos.current.x;
       const deltaY = e.clientY - lastMousePos.current.y;
 
-      // Momentum simples baseado no último movimento
+      // Momentum suavizado baseado no movimento
       if (deltaTime > 0) {
-        const velX = Math.max(-2, Math.min(2, deltaX * 0.1));
-        const velY = Math.max(-2, Math.min(2, deltaY * 0.1));
+        const velX = Math.max(-1.5, Math.min(1.5, deltaX * 0.08));
+        const velY = Math.max(-1.5, Math.min(1.5, deltaY * 0.08));
         setVelocity({ x: velX, y: velY });
       }
 
       const newX = wrap(
-        shipPosRef.current.x - deltaX / 8,
+        shipPosRef.current.x - deltaX / 12,
         0,
         WORLD_CONFIG.width,
       );
       const newY = wrap(
-        shipPosRef.current.y - deltaY / 8,
+        shipPosRef.current.y - deltaY / 12,
         0,
         WORLD_CONFIG.height,
       );
@@ -626,7 +630,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       let newMapY = mapY.get() + deltaY;
 
       // Wrap visual do mapa quando sair muito longe
-      const wrapThreshold = 2000; // pixels antes de fazer wrap
+      const wrapThreshold = 5000; // pixels antes de fazer wrap
       if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
       if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
       if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
