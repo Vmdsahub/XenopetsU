@@ -345,19 +345,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
       const currentAngle = shipRotation.get();
 
-      // Calcula a diferença angular considerando wrap de 360°
-      let angleDiff = newAngle - currentAngle;
-      if (angleDiff > 180) angleDiff -= 360;
-      if (angleDiff < -180) angleDiff += 360;
+      // Normaliza ângulos para evitar saltos visuais
+      let normalizedNew = ((newAngle % 360) + 360) % 360;
+      let normalizedCurrent = ((currentAngle % 360) + 360) % 360;
 
-      // Se o ângulo tem wrap (mudança grande), usa animação muito rápida
-      // Caso contrário, aplica direto para máxima responsividade
-      if (Math.abs(angleDiff) > 120) {
-        const targetAngle = currentAngle + angleDiff;
-        animate(shipRotation, targetAngle, { duration: 0.01, ease: "linear" });
-      } else {
-        shipRotation.set(newAngle);
-      }
+      // Calcula a diferença usando o caminho mais curto
+      let diff = normalizedNew - normalizedCurrent;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+
+      // Aplica rotação direta para máxima performance
+      shipRotation.set(currentAngle + diff);
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -428,22 +426,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
         const currentAngle = shipRotation.get();
 
-        // Calcula a diferença angular considerando wrap de 360°
-        let angleDiff = newAngle - currentAngle;
-        if (angleDiff > 180) angleDiff -= 360;
-        if (angleDiff < -180) angleDiff += 360;
+        // Normaliza ângulos para evitar saltos visuais
+        let normalizedNew = ((newAngle % 360) + 360) % 360;
+        let normalizedCurrent = ((currentAngle % 360) + 360) % 360;
 
-        // Se o ângulo tem wrap (mudança grande), usa animação muito rápida
-        // Caso contrário, aplica direto para máxima responsividade
-        if (Math.abs(angleDiff) > 120) {
-          const targetAngle = currentAngle + angleDiff;
-          animate(shipRotation, targetAngle, {
-            duration: 0.01,
-            ease: "linear",
-          });
-        } else {
-          shipRotation.set(newAngle);
-        }
+        // Calcula a diferença usando o caminho mais curto
+        let diff = normalizedNew - normalizedCurrent;
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+
+        // Aplica rotação direta para máxima performance
+        shipRotation.set(currentAngle + diff);
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
