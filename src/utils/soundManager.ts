@@ -310,8 +310,7 @@ class EngineSound {
   private lastStartTime = 0;
   private startDebounceTimeout: NodeJS.Timeout | null = null;
 
-  // Constantes para controle de frequência
-  private readonly MIN_PLAY_DURATION_MS = 100; // Duração mínima antes de parar
+  // Sem constantes de controle - som responde imediatamente
 
   start(): void {
     // Se já está tocando, não inicia novamente
