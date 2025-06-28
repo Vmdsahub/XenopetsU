@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion, MotionValue } from "framer-motion";
 
 interface PlayerShipProps {
@@ -14,6 +14,18 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
   isDragging,
   isDecelerating = false,
 }) => {
+  const [showTrail, setShowTrail] = useState(false);
+
+  useEffect(() => {
+    if (isDragging) {
+      setShowTrail(true);
+    } else {
+      const timeout = setTimeout(() => {
+        setShowTrail(false);
+      }, 700);
+      return () => clearTimeout(timeout);
+    }
+  }, [isDragging]);
   return (
     <motion.div
       className={`relative w-10 h-10 z-20 ${isDragging ? "pointer-events-none" : ""}`}
