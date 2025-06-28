@@ -254,6 +254,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
+    // Tempo atual para animações
+    const currentTime = Date.now() * 0.001; // Converte para segundos
+
     const colors = [
       "#60A5FA",
       "#F87171",
