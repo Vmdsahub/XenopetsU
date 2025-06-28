@@ -262,12 +262,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
     // Função para renderizar camada de estrelas com wrap seamless perfeito
     const renderLayer = (stars: typeof starData.background, speed: number) => {
-      // Calcula o tamanho do tile base para wrap seamless
-      const baseTileWidth = canvasWidth;
-      const baseTileHeight = canvasHeight;
+      // Calcula o tamanho do tile base para wrap seamless considerando o mapa expandido
+      const mapScale = 10000 / 400; // 10000 = range total do mapa (-5000 a 5000), 400 = canvas típico
+      const baseTileWidth = canvasWidth * mapScale;
+      const baseTileHeight = canvasHeight * mapScale;
 
       stars.forEach((star) => {
-        // Posição base da estrela (0-100 normalizado para 0-canvas)
+        // Posição base da estrela escalada para o mapa maior
         const baseX = (star.x / 100) * baseTileWidth;
         const baseY = (star.y / 100) * baseTileHeight;
 
@@ -279,11 +280,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const starX = baseX + parallaxX;
         const starY = baseY + parallaxY;
 
-        // Normaliza para criar wrap seamless
+        // Normaliza para criar wrap seamless no canvas atual
         const wrappedX =
           ((starX % baseTileWidth) + baseTileWidth) % baseTileWidth;
         const wrappedY =
           ((starY % baseTileHeight) + baseTileHeight) % baseTileHeight;
+
+        // Converte para coordenadas do canvas
+        const canvasX = (wrappedX / baseTileWidth) * canvasWidth;
+        const canvasY = (wrappedY / baseTileHeight) * canvasHeight;
 
         // Renderiza múltiplas cópias para garantir cobertura completa nas bordas
         const renderPositions = [
