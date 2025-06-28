@@ -154,6 +154,34 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
+  // Atualiza parallax das estrelas em tempo real
+  useEffect(() => {
+    const updateParallax = () => {
+      const layer1 = document.querySelectorAll('[data-star-layer="0"]');
+      const layer2 = document.querySelectorAll('[data-star-layer="1"]');
+      const layer3 = document.querySelectorAll('[data-star-layer="2"]');
+
+      const mapXValue = mapX.get();
+      const mapYValue = mapY.get();
+
+      layer1.forEach((el: any) => {
+        el.style.transform = `translate(${mapXValue * 0.1}px, ${mapYValue * 0.1}px)`;
+      });
+
+      layer2.forEach((el: any) => {
+        el.style.transform = `translate(${mapXValue * 0.3}px, ${mapYValue * 0.3}px)`;
+      });
+
+      layer3.forEach((el: any) => {
+        el.style.transform = `translate(${mapXValue * 0.6}px, ${mapYValue * 0.6}px)`;
+      });
+
+      requestAnimationFrame(updateParallax);
+    };
+
+    updateParallax();
+  }, [mapX, mapY]);
+
   // Sistema de momentum/inércia
   useEffect(() => {
     velocityRef.current = velocity;
