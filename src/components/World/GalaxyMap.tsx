@@ -342,8 +342,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     // Rotação imediata e responsiva
     if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
       setHasMoved(true);
-      const angle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-      shipRotation.set(angle); // Rotação imediata sem animação
+      const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
+      const currentAngle = shipRotation.get();
+
+      // Calcula a diferença angular considerando wrap de 360°
+      let angleDiff = newAngle - currentAngle;
+      if (angleDiff > 180) angleDiff -= 360;
+      if (angleDiff < -180) angleDiff += 360;
+
+      // Aplica a rotação suave tomando o caminho mais curto
+      const targetAngle = currentAngle + angleDiff;
+      animate(shipRotation, targetAngle, { duration: 0.05, ease: "easeOut" });
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -411,8 +420,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
         setHasMoved(true);
-        const angle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-        shipRotation.set(angle); // Rotação imediata sem animação
+        const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
+        const currentAngle = shipRotation.get();
+
+        // Calcula a diferença angular considerando wrap de 360°
+        let angleDiff = newAngle - currentAngle;
+        if (angleDiff > 180) angleDiff -= 360;
+        if (angleDiff < -180) angleDiff += 360;
+
+        // Aplica a rotação suave tomando o caminho mais curto
+        const targetAngle = currentAngle + angleDiff;
+        animate(shipRotation, targetAngle, { duration: 0.05, ease: "easeOut" });
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
