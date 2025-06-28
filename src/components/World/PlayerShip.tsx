@@ -41,8 +41,12 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       {isDragging && (
         <>
           <motion.div
-            className="absolute w-0.5 h-6 bg-gradient-to-t from-transparent to-blue-400 transform -translate-x-1/2 z-0"
-            style={{ top: "calc(100% - 20px)", left: "calc(50% - 1px)" }}
+            className="absolute w-0.5 h-6 bg-gradient-to-t from-transparent to-blue-400 transform -translate-x-1/2"
+            style={{
+              top: "calc(100% - 20px)",
+              left: "calc(50% - 1px)",
+              zIndex: -1,
+            }}
             animate={{
               opacity: [0.3, 0.8, 0.3],
               scaleY: [0.5, 1, 0.5],
@@ -54,8 +58,12 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
             }}
           />
           <motion.div
-            className="absolute w-0.5 h-5 bg-gradient-to-t from-transparent to-cyan-300 transform -translate-x-1/2 z-0"
-            style={{ top: "calc(100% - 16px)", left: "calc(50% - 1px)" }}
+            className="absolute w-0.5 h-5 bg-gradient-to-t from-transparent to-cyan-300 transform -translate-x-1/2"
+            style={{
+              top: "calc(100% - 16px)",
+              left: "calc(50% - 1px)",
+              zIndex: -1,
+            }}
             animate={{
               opacity: [0.2, 0.6, 0.2],
               scaleY: [0.3, 1, 0.3],
