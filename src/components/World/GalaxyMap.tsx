@@ -230,7 +230,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Renderização corrigida para escala -5000 a +5000
+  // Renderização com wrap orgânico para eliminar padrões
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -250,66 +250,78 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const parallaxX = currentMapX * speed;
         const parallaxY = currentMapY * speed;
 
-        // Converte coordenadas do espaço das estrelas (-10000 a +10000) para pixels
-        // Escala: 1 unidade do mapa = 0.05 pixels (ajustável)
-        const scale = 0.05;
-        let x = star.x * scale + canvasWidth / 2 + parallaxX;
-        let y = star.y * scale + canvasHeight / 2 + parallaxY;
+        // Escala muito pequena para distribuir as estrelas
+        const scale = 0.02;
+        let baseX = star.x * scale + canvasWidth / 2 + parallaxX;
+        let baseY = star.y * scale + canvasHeight / 2 + parallaxY;
 
-        // Wrap toroidal sem criar padrões de grade
-        const wrapSize = 1000; // Tamanho do tile em pixels
+        // Função hash para gerar offsets únicos por estrela
+        const hash = (n: number) => {
+          let h = n * 2654435761;
+          h = h ^ (h >> 16);
+          h = h * 2654435761;
+          h = h ^ (h >> 16);
+          return (h >>> 0) / 4294967296;
+        };
 
-        // Normaliza para o tile base
-        const tileX = Math.floor(x / wrapSize);
-        const tileY = Math.floor(y / wrapSize);
-        const localX = x - tileX * wrapSize;
-        const localY = y - tileY * wrapSize;
+        // Gera offsets únicos baseados na posição da estrela
+        const starSeed =
+          Math.floor(star.x * 1000) + Math.floor(star.y * 1000) * 10000;
+        const offsetX = hash(starSeed * 11) * 2000 - 1000; // -1000 a +1000
+        const offsetY = hash(starSeed * 13) * 2000 - 1000;
 
-        // Renderiza em uma grade 3x3 ao redor da posição atual
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const finalX = localX + dx * wrapSize;
-            const finalY = localY + dy * wrapSize;
+        // Múltiplas cópias com offsets orgânicos
+        const copies = [
+          { x: baseX, y: baseY },
+          { x: baseX + offsetX, y: baseY },
+          { x: baseX, y: baseY + offsetY },
+          { x: baseX + offsetX, y: baseY + offsetY },
+          { x: baseX - offsetX, y: baseY },
+          { x: baseX, y: baseY - offsetY },
+          { x: baseX - offsetX, y: baseY - offsetY },
+          { x: baseX + offsetX * 1.5, y: baseY + offsetY * 0.7 },
+          { x: baseX - offsetX * 0.8, y: baseY + offsetY * 1.3 },
+        ];
 
-            // Culling otimizado
-            if (
-              finalX < -star.size * 2 ||
-              finalX > canvasWidth + star.size * 2 ||
-              finalY < -star.size * 2 ||
-              finalY > canvasHeight + star.size * 2
-            ) {
-              continue;
-            }
+        copies.forEach((pos) => {
+          // Culling
+          if (
+            pos.x < -star.size * 3 ||
+            pos.x > canvasWidth + star.size * 3 ||
+            pos.y < -star.size * 3 ||
+            pos.y > canvasHeight + star.size * 3
+          ) {
+            return;
+          }
 
-            ctx.globalAlpha = star.opacity;
-            ctx.fillStyle = star.color;
+          ctx.globalAlpha = star.opacity;
+          ctx.fillStyle = star.color;
 
-            if (star.isColorful) {
-              const gradient = ctx.createRadialGradient(
-                finalX,
-                finalY,
-                0,
-                finalX,
-                finalY,
-                star.size * 2.5,
-              );
-              gradient.addColorStop(0, star.color);
-              gradient.addColorStop(0.4, star.color + "77");
-              gradient.addColorStop(1, star.color + "00");
-              ctx.fillStyle = gradient;
-
-              ctx.beginPath();
-              ctx.arc(finalX, finalY, star.size * 2.5, 0, Math.PI * 2);
-              ctx.fill();
-
-              ctx.fillStyle = star.color;
-            }
+          if (star.isColorful) {
+            const gradient = ctx.createRadialGradient(
+              pos.x,
+              pos.y,
+              0,
+              pos.x,
+              pos.y,
+              star.size * 2.5,
+            );
+            gradient.addColorStop(0, star.color);
+            gradient.addColorStop(0.4, star.color + "77");
+            gradient.addColorStop(1, star.color + "00");
+            ctx.fillStyle = gradient;
 
             ctx.beginPath();
-            ctx.arc(finalX, finalY, star.size, 0, Math.PI * 2);
+            ctx.arc(pos.x, pos.y, star.size * 2.5, 0, Math.PI * 2);
             ctx.fill();
+
+            ctx.fillStyle = star.color;
           }
-        }
+
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, star.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
       });
     };
 
