@@ -701,41 +701,23 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     let newY = proposedY;
     let allowMovement = true;
 
-    const canvas = canvasRef.current;
-    if (canvas) {
-      // Converte posição da nave para coordenadas visuais
-      const centerVisualX = canvas.width / 2;
-      const centerVisualY = canvas.height / 2;
+    // Calcula posição visual proposta baseada no movimento do mapa
+    const currentMapX = mapX.get();
+    const currentMapY = mapY.get();
+    const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+    const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+    const proposedMapX = currentMapX + deltaMapX;
+    const proposedMapY = currentMapY + deltaMapY;
 
-      // Calcula posição visual proposta baseada no movimento do mapa
-      const currentMapX = mapX.get();
-      const currentMapY = mapY.get();
-      const deltaMapX = (shipPosRef.current.x - proposedX) * 12; // Inverte o cálculo do movimento
-      const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
-      const proposedMapX = currentMapX + deltaMapX;
-      const proposedMapY = currentMapY + deltaMapY;
-
-      // A posição efetiva da nave em relação ao centro é o inverso do movimento do mapa
-      const effectiveShipX = centerVisualX - proposedMapX;
-      const effectiveShipY = centerVisualY - proposedMapY;
-
-      const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio (2x maior)
-      const distanceFromCenter = Math.sqrt(
-        Math.pow(effectiveShipX - centerVisualX, 2) +
-          Math.pow(effectiveShipY - centerVisualY, 2),
-      );
-
-      // Se ultrapassar a barreira, bloqueia completamente
-      if (distanceFromCenter > barrierRadius) {
-        // Não permite o movimento - mantém posição atual
-        newX = shipPosRef.current.x;
-        newY = shipPosRef.current.y;
-        allowMovement = false;
-
-        // Para todo movimento
-        setVelocity({ x: 0, y: 0 });
-        setIsDecelerating(false);
-      }
+    if (checkBarrierCollision(proposedMapX, proposedMapY)) {
+      // Ativa flash vermelho e bloqueia movimento
+      setIsColliding(true);
+      setTimeout(() => setIsColliding(false), 150);
+      newX = shipPosRef.current.x;
+      newY = shipPosRef.current.y;
+      allowMovement = false;
+      setVelocity({ x: 0, y: 0 });
+      setIsDecelerating(false);
     }
 
     setShipPosition({ x: newX, y: newY });
