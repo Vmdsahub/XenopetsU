@@ -634,20 +634,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           <div className="text-xs text-gray-300">Clique para explorar</div>
         </motion.div>
       )}
-
-      {/* Botão reset */}
-      <button
-        onClick={resetShipPosition}
-        className="absolute top-4 right-4 text-white/90 text-xs bg-red-600/80 hover:bg-red-600/90 px-3 py-2 rounded-lg backdrop-blur-sm transition-all duration-200 border border-red-400/30"
-        title="Voltar ao centro"
-      >
-        🏠 Centro
-      </button>
-
-      {/* Dica */}
-      <div className="absolute top-4 right-24 text-white/60 text-xs bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
-        Arraste • Mundo infinito
-      </div>
     </div>
   );
 };
