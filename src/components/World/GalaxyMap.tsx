@@ -142,7 +142,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas completamente novo - sem grades
+  // Sistema de estrelas simples e efetivo
   const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -153,71 +153,67 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    // Gerador pseudo-aleatório robusto usando múltiplas funções prime
-    const prng = (seed: number, offset: number = 0) => {
-      const a = 1664525;
-      const c = 1013904223;
-      const m = Math.pow(2, 32);
-      return ((a * (seed + offset) + c) % m) / m;
-    };
-
-    const createStar = (index: number, layerType: "bg" | "mid" | "fg") => {
-      // Seeds únicos para cada propriedade para evitar correlação
-      const seedBase = index * 73856093; // Número primo grande
+    const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
+      // Função hash simples e efetiva
+      const hash = (n: number) => {
+        let h = n * 2654435761;
+        h = h ^ (h >> 16);
+        h = h * 2654435761;
+        h = h ^ (h >> 16);
+        return (h >>> 0) / 4294967296;
+      };
 
       const baseConfig = {
         bg: {
-          sizeMin: 0.2,
-          sizeMax: 0.6,
+          sizeMin: 0.3,
+          sizeMax: 0.8,
           opacityMin: 0.1,
-          opacityMax: 0.3,
+          opacityMax: 0.4,
           speed: 0.08,
         },
         mid: {
-          sizeMin: 0.5,
-          sizeMax: 1.0,
+          sizeMin: 0.6,
+          sizeMax: 1.2,
           opacityMin: 0.2,
-          opacityMax: 0.5,
+          opacityMax: 0.6,
           speed: 0.25,
         },
         fg: {
-          sizeMin: 0.8,
-          sizeMax: 1.6,
-          opacityMin: 0.3,
-          opacityMax: 0.8,
+          sizeMin: 1.0,
+          sizeMax: 2.0,
+          opacityMin: 0.4,
+          opacityMax: 0.9,
           speed: 0.5,
         },
       }[layerType];
 
-      // Distribuição em um espaço muito grande para garantir cobertura total
-      const space = 20000; // Espaço -10000 a +10000 em cada direção
-
       return {
-        x: (prng(seedBase, 19937) - 0.5) * space,
-        y: (prng(seedBase, 180623) - 0.5) * space,
+        x: hash(seed * 11) * WORLD_CONFIG.width,
+        y: hash(seed * 13) * WORLD_CONFIG.height,
         size:
           baseConfig.sizeMin +
-          prng(seedBase, 982451653) * (baseConfig.sizeMax - baseConfig.sizeMin),
+          hash(seed * 17) * (baseConfig.sizeMax - baseConfig.sizeMin),
         opacity:
           baseConfig.opacityMin +
-          prng(seedBase, 433494437) *
-            (baseConfig.opacityMax - baseConfig.opacityMin),
+          hash(seed * 19) * (baseConfig.opacityMax - baseConfig.opacityMin),
         color:
-          layerType === "fg" && prng(seedBase, 961748927) > 0.8
-            ? colors[Math.floor(prng(seedBase, 179424673) * colors.length)]
+          layerType === "fg" && hash(seed * 23) > 0.7
+            ? colors[Math.floor(hash(seed * 29) * colors.length)]
             : "#ffffff",
         speed: baseConfig.speed,
-        isColorful: layerType === "fg" && prng(seedBase, 961748927) > 0.8,
+        isColorful: layerType === "fg" && hash(seed * 23) > 0.7,
       };
     };
 
     return {
-      background: Array.from({ length: 3000 }, (_, i) => createStar(i, "bg")),
-      middle: Array.from({ length: 1500 }, (_, i) =>
-        createStar(i + 5000, "mid"),
+      background: Array.from({ length: 1000 }, (_, i) =>
+        createStar(i + 1000, "bg"),
       ),
-      foreground: Array.from({ length: 600 }, (_, i) =>
-        createStar(i + 10000, "fg"),
+      middle: Array.from({ length: 500 }, (_, i) =>
+        createStar(i + 2000, "mid"),
+      ),
+      foreground: Array.from({ length: 200 }, (_, i) =>
+        createStar(i + 3000, "fg"),
       ),
     };
   }, []);
