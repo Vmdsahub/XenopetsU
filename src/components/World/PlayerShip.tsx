@@ -50,7 +50,7 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       />
 
       {/* Ship trails - apenas quando arrastando */}
-      {isDragging && (
+      {showTrail && (
         <>
           <motion.div
             className="absolute w-0.5 h-6 bg-gradient-to-t from-transparent to-blue-400 transform -translate-x-1/2"
