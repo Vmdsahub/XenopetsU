@@ -331,11 +331,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
 
-    // Momentum suave baseado na direção do movimento
-    if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
-      const normalizedX = deltaX > 0 ? 1 : deltaX < 0 ? -1 : 0;
-      const normalizedY = deltaY > 0 ? 1 : deltaY < 0 ? -1 : 0;
-      setVelocity({ x: normalizedX * 0.5, y: normalizedY * 0.5 });
+    // Momentum proporcional ao movimento real
+    const movementMagnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    if (movementMagnitude > 2) {
+      // Só aplica momentum se o movimento for significativo
+      const velX = (deltaX / 8) * 0.3; // Muito reduzido
+      const velY = (deltaY / 8) * 0.3;
+      setVelocity({ x: velX, y: velY });
+    } else {
+      setVelocity({ x: 0, y: 0 }); // Sem momentum para movimentos pequenos
     }
 
     // Atualiza posição da nave
@@ -399,11 +403,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const deltaX = e.clientX - lastMousePos.current.x;
       const deltaY = e.clientY - lastMousePos.current.y;
 
-      // Momentum suave baseado na direção do movimento
-      if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
-        const normalizedX = deltaX > 0 ? 1 : deltaX < 0 ? -1 : 0;
-        const normalizedY = deltaY > 0 ? 1 : deltaY < 0 ? -1 : 0;
-        setVelocity({ x: normalizedX * 0.5, y: normalizedY * 0.5 });
+      // Momentum proporcional ao movimento real
+      const movementMagnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      if (movementMagnitude > 2) {
+        // Só aplica momentum se o movimento for significativo
+        const velX = (deltaX / 8) * 0.3; // Muito reduzido
+        const velY = (deltaY / 8) * 0.3;
+        setVelocity({ x: velX, y: velY });
+      } else {
+        setVelocity({ x: 0, y: 0 }); // Sem momentum para movimentos pequenos
       }
 
       const newX = wrap(
