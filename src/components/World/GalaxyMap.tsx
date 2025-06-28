@@ -758,43 +758,26 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       );
 
     // Verifica colisão com barreira circular
-    const centerX = WORLD_CONFIG.width / 2; // 100% (centro do mundo)
-    const centerY = WORLD_CONFIG.height / 2; // 100% (centro do mundo)
-    const barrierRadius = 20; // Raio bem restritivo em unidades do mundo
+    const centerX = WORLD_CONFIG.width / 2; // 100
+    const centerY = WORLD_CONFIG.height / 2; // 100
+    const barrierRadius = 15; // Raio muito restritivo
 
-    // Calcula distância considerando wrap toroidal
-    const dx = Math.abs(proposedX - centerX);
-    const dy = Math.abs(proposedY - centerY);
-    const wrapDx = Math.min(dx, WORLD_CONFIG.width - dx);
-    const wrapDy = Math.min(dy, WORLD_CONFIG.height - dy);
-    const distanceFromCenter = Math.sqrt(wrapDx * wrapDx + wrapDy * wrapDy);
+    const distanceFromCenter = Math.sqrt(
+      Math.pow(proposedX - centerX, 2) + Math.pow(proposedY - centerY, 2)
+    );
 
     let newX = proposedX;
     let newY = proposedY;
 
-    // Se a nova posição ultrapassar a barreira, limita na borda
+    // Se ultrapassar a barreira, bloqueia completamente
     if (distanceFromCenter > barrierRadius) {
-      // Calcula ângulo considerando wrap
-      let angleDx = proposedX - centerX;
-      let angleDy = proposedY - centerY;
+      const angle = Math.atan2(proposedY - centerY, proposedX - centerX);
+      newX = centerX + Math.cos(angle) * (barrierRadius - 1); // Margem de segurança
+      newY = centerY + Math.sin(angle) * (barrierRadius - 1);
 
-      if (Math.abs(angleDx) > WORLD_CONFIG.width / 2) {
-        angleDx = angleDx > 0 ? angleDx - WORLD_CONFIG.width : angleDx + WORLD_CONFIG.width;
-      }
-      if (Math.abs(angleDy) > WORLD_CONFIG.height / 2) {
-        angleDy = angleDy > 0 ? angleDy - WORLD_CONFIG.height : angleDy + WORLD_CONFIG.height;
-      }
-
-      const angle = Math.atan2(angleDy, angleDx);
-      newX = centerX + Math.cos(angle) * barrierRadius;
-      newY = centerY + Math.sin(angle) * barrierRadius;
-
-      // Garante que a posição está dentro dos limites do mundo
-      newX = wrap(newX, 0, WORLD_CONFIG.width);
-      newY = wrap(newY, 0, WORLD_CONFIG.height);
-
-      // Para o momentum se bater na barreira
+      // Para todo movimento
       setVelocity({ x: 0, y: 0 });
+      setIsDecelerating(false);
     }
         setVelocity({ x: 0, y: 0 });
       }
