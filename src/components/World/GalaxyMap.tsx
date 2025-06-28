@@ -138,12 +138,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const lastMoveTime = useRef(Date.now());
   const [hasMoved, setHasMoved] = useState(false);
 
-  // Estrelas fixas - mais estrelas para preencher todo o mapa expandido
+  // Estrelas fixas - distribuídas em todo o mapa toroidal
   const stars = useMemo(() => {
-    return Array.from({ length: 800 }, (_, i) => ({
+    return Array.from({ length: 1200 }, (_, i) => ({
       id: i,
-      x: Math.random() * 150, // Expandido para 150% para cobrir além das bordas
-      y: Math.random() * 150,
+      x: Math.random() * WORLD_CONFIG.width, // Cobre todo o mundo toroidal
+      y: Math.random() * WORLD_CONFIG.height,
       animationDelay: Math.random() * 3,
       animationDuration: 2 + Math.random() * 2,
       size: 0.5 + Math.random() * 1.5, // Tamanhos variados
