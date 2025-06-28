@@ -22,7 +22,7 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
     } else {
       const timeout = setTimeout(() => {
         setShowTrail(false);
-      }, 700);
+      }, 200);
       return () => clearTimeout(timeout);
     }
   }, [isDragging]);
