@@ -160,23 +160,19 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas avançado com múltiplas camadas e efeitos
+  // Sistema de estrelas corrigido para escala -5000 a +5000
   const starData = useMemo(() => {
     const colors = [
-      "#60A5FA", // Azul
-      "#F87171", // Vermelho
-      "#34D399", // Verde
-      "#FBBF24", // Amarelo
-      "#A78BFA", // Roxo
-      "#FB7185", // Rosa
-      "#10B981", // Esmeralda
-      "#F59E0B", // Âmbar
-      "#8B5CF6", // Violeta
-      "#06B6D4", // Ciano
+      "#60A5FA",
+      "#F87171",
+      "#34D399",
+      "#FBBF24",
+      "#A78BFA",
+      "#FB7185",
     ];
 
-    const createStar = (seed: number, layerType: "bg" | "mid" | "fg" | "ultra") => {
-      // Função hash mais robusta
+    const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
+      // Função hash simples e efetiva
       const hash = (n: number) => {
         let h = n * 2654435761;
         h = h ^ (h >> 16);
@@ -187,48 +183,31 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       const baseConfig = {
         bg: {
-          sizeMin: 0.2,
-          sizeMax: 0.6,
+          sizeMin: 0.3,
+          sizeMax: 0.8,
           opacityMin: 0.1,
-          opacityMax: 0.3,
-          speed: 0.05,
-          twinkleSpeed: 0.3,
-          colorChance: 0.1,
+          opacityMax: 0.4,
+          speed: 0.08,
         },
         mid: {
-          sizeMin: 0.5,
-          sizeMax: 1.0,
+          sizeMin: 0.6,
+          sizeMax: 1.2,
           opacityMin: 0.2,
-          opacityMax: 0.5,
-          speed: 0.15,
-          twinkleSpeed: 0.5,
-          colorChance: 0.2,
+          opacityMax: 0.6,
+          speed: 0.25,
         },
         fg: {
-          sizeMin: 0.8,
-          sizeMax: 1.8,
-          opacityMin: 0.3,
-          opacityMax: 0.7,
-          speed: 0.35,
-          twinkleSpeed: 0.8,
-          colorChance: 0.4,
-        },
-        ultra: {
-          sizeMin: 1.5,
-          sizeMax: 3.0,
-          opacityMin: 0.5,
+          sizeMin: 1.0,
+          sizeMax: 2.0,
+          opacityMin: 0.4,
           opacityMax: 0.9,
-          speed: 0.6,
-          twinkleSpeed: 1.2,
-          colorChance: 0.8,
+          speed: 0.5,
         },
       }[layerType];
 
-      // Escala expandida para mais estrelas
-      const MAP_SCALE = 30000;
-
-      const isColorful = hash(seed * 23) < baseConfig.colorChance;
-      const colorIndex = Math.floor(hash(seed * 29) * colors.length);
+      // Escala real do mapa: -5000 a +5000 = 10000 unidades
+      // Expandimos para 20000 unidades para ter estrelas suficientes
+      const MAP_SCALE = 20000;
 
       return {
         x: (hash(seed * 11) - 0.5) * MAP_SCALE,
@@ -239,29 +218,24 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         opacity:
           baseConfig.opacityMin +
           hash(seed * 19) * (baseConfig.opacityMax - baseConfig.opacityMin),
-        color: isColorful ? colors[colorIndex] : "#ffffff",
+        color:
+          layerType === "fg" && hash(seed * 23) > 0.7
+            ? colors[Math.floor(hash(seed * 29) * colors.length)]
+            : "#ffffff",
         speed: baseConfig.speed,
-        twinkleSpeed: baseConfig.twinkleSpeed,
-        twinklePhase: hash(seed * 31) * Math.PI * 2,
-        pulsePhase: hash(seed * 37) * Math.PI * 2,
-        isColorful,
-        brightness: 0.5 + hash(seed * 41) * 0.5,
-        glowIntensity: isColorful ? 0.3 + hash(seed * 43) * 0.7 : 0,
+        isColorful: layerType === "fg" && hash(seed * 23) > 0.7,
       };
     };
 
     return {
-      background: Array.from({ length: 2500 }, (_, i) =>
+      background: Array.from({ length: 1500 }, (_, i) =>
         createStar(i + 1000, "bg"),
       ),
-      middle: Array.from({ length: 1500 }, (_, i) =>
-        createStar(i + 4000, "mid"),
+      middle: Array.from({ length: 800 }, (_, i) =>
+        createStar(i + 2000, "mid"),
       ),
-      foreground: Array.from({ length: 800 }, (_, i) =>
-        createStar(i + 6000, "fg"),
-      ),
-      ultra: Array.from({ length: 200 }, (_, i) =>
-        createStar(i + 8000, "ultra"),
+      foreground: Array.from({ length: 300 }, (_, i) =>
+        createStar(i + 3000, "fg"),
       ),
     };
   }, []);
@@ -274,7 +248,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Sistema de renderização de estrelas com efeitos avançados
+  // Geração dinâmica de estrelas baseada na posição da câmera
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -290,11 +264,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapY = mapY.get();
 
     // Tempo atual para animações
-    const currentTime = Date.now() * 0.001;
+    const currentTime = Date.now() * 0.001; // Converte para segundos
 
     const colors = [
-      "#60A5FA", "#F87171", "#34D399", "#FBBF24", "#A78BFA", 
-      "#FB7185", "#10B981", "#F59E0B", "#8B5CF6", "#06B6D4"
+      "#60A5FA",
+      "#F87171",
+      "#34D399",
+      "#FBBF24",
+      "#A78BFA",
+      "#FB7185",
     ];
 
     // Função hash robusta
@@ -307,69 +285,38 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       return (h >>> 0) / 4294967296;
     };
 
-    // Gera estrelas dinamicamente com efeitos avançados
-    const generateLayer = (
-      density: number, 
-      speed: number, 
-      layer: number,
-      layerName: string
-    ) => {
+    // Gera estrelas dinamicamente baseado na região visível
+    const generateLayer = (density: number, speed: number, layer: number) => {
       // Calcula posição da câmera com parallax
       const cameraX = -currentMapX * speed;
       const cameraY = -currentMapY * speed;
 
       // Área visível expandida
-      const margin = 300;
-      const cellSize = layerName === "ultra" ? 100 : layerName === "fg" ? 80 : 60;
-      const startX = Math.floor((cameraX - margin) / cellSize) * cellSize;
-      const endX = Math.ceil((cameraX + canvasWidth + margin) / cellSize) * cellSize;
-      const startY = Math.floor((cameraY - margin) / cellSize) * cellSize;
-      const endY = Math.ceil((cameraY + canvasHeight + margin) / cellSize) * cellSize;
-
-      // Configurações por camada
-      const layerConfig = {
-        bg: { 
-          colorChance: 0.05, 
-          glowChance: 0.02,
-          twinkleIntensity: 0.2,
-          pulseIntensity: 0.1
-        },
-        mid: { 
-          colorChance: 0.15, 
-          glowChance: 0.08,
-          twinkleIntensity: 0.4,
-          pulseIntensity: 0.2
-        },
-        fg: { 
-          colorChance: 0.35, 
-          glowChance: 0.25,
-          twinkleIntensity: 0.6,
-          pulseIntensity: 0.3
-        },
-        ultra: { 
-          colorChance: 0.8, 
-          glowChance: 0.9,
-          twinkleIntensity: 0.8,
-          pulseIntensity: 0.5
-        }
-      }[layerName] || { colorChance: 0.1, glowChance: 0.05, twinkleIntensity: 0.3, pulseIntensity: 0.1 };
+      const margin = 200;
+      const startX = Math.floor((cameraX - margin) / 50) * 50;
+      const endX = Math.ceil((cameraX + canvasWidth + margin) / 50) * 50;
+      const startY = Math.floor((cameraY - margin) / 50) * 50;
+      const endY = Math.ceil((cameraY + canvasHeight + margin) / 50) * 50;
 
       // Gera estrelas em grades não-uniformes
-      for (let gx = startX; gx < endX; gx += cellSize) {
-        for (let gy = startY; gy < endY; gy += cellSize) {
+      for (let gx = startX; gx < endX; gx += 50) {
+        for (let gy = startY; gy < endY; gy += 50) {
           const cellHash = hash(gx, gy, layer);
 
-          // Número de estrelas nesta célula
+          // Número de estrelas nesta célula (0-density)
           const numStars = Math.floor(cellHash * density);
 
           for (let i = 0; i < numStars; i++) {
             const starHash = hash(gx + i * 137, gy + i * 241, layer + i);
-            const starHash2 = hash(gx + i * 173, gy + i * 197, layer + i + 1000);
-            const starHash3 = hash(gx + i * 211, gy + i * 223, layer + i + 2000);
+            const starHash2 = hash(
+              gx + i * 173,
+              gy + i * 197,
+              layer + i + 1000,
+            );
 
-            // Posição dentro da célula
-            const localX = starHash * cellSize;
-            const localY = starHash2 * cellSize;
+            // Posição dentro da célula (completamente aleatória)
+            const localX = starHash * 50;
+            const localY = starHash2 * 50;
 
             const worldX = gx + localX;
             const worldY = gy + localY;
@@ -380,124 +327,108 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
             // Só renderiza se visível
             if (
-              screenX >= -20 &&
-              screenX <= canvasWidth + 20 &&
-              screenY >= -20 &&
-              screenY <= canvasHeight + 20
+              screenX >= -10 &&
+              screenX <= canvasWidth + 10 &&
+              screenY >= -10 &&
+              screenY <= canvasHeight + 10
             ) {
               // Propriedades da estrela
               const sizeHash = hash(worldX * 1.1, worldY * 1.3, layer);
               const opacityHash = hash(worldX * 1.7, worldY * 1.9, layer);
               const colorHash = hash(worldX * 2.1, worldY * 2.3, layer);
 
-              // Seeds únicos para animações
+              // Hash para animações únicas de cada estrela
               const animationSeed = hash(worldX * 3.7, worldY * 4.1, layer);
               const animationSeed2 = hash(worldX * 5.3, worldY * 6.7, layer);
-              const animationSeed3 = hash(worldX * 7.1, worldY * 8.3, layer);
 
-              const baseSize = layerName === "ultra" 
-                ? 1.5 + sizeHash * 1.5
-                : layerName === "fg" 
-                ? 1.0 + sizeHash * 0.8
-                : layerName === "mid"
-                ? 0.6 + sizeHash * 0.4
-                : 0.3 + sizeHash * 0.3;
+              const baseSize =
+                layer === 1
+                  ? 0.3 + sizeHash * 0.5
+                  : layer === 2
+                    ? 0.6 + sizeHash * 0.6
+                    : 1.0 + sizeHash * 1.0;
 
-              const baseOpacity = layerName === "ultra"
-                ? 0.6 + opacityHash * 0.3
-                : layerName === "fg"
-                ? 0.4 + opacityHash * 0.3
-                : layerName === "mid"
-                ? 0.2 + opacityHash * 0.3
-                : 0.1 + opacityHash * 0.2;
+              const baseOpacity =
+                layer === 1
+                  ? 0.1 + opacityHash * 0.3
+                  : layer === 2
+                    ? 0.2 + opacityHash * 0.4
+                    : 0.4 + opacityHash * 0.5;
 
-              // Animação de piscar avançada
-              const twinkleSpeed = 0.3 + animationSeed * 1.5;
-              const twinklePhase = animationSeed * Math.PI * 2;
-              const twinkleIntensity = layerConfig.twinkleIntensity;
-              const twinkleFactor = 1 + Math.sin(currentTime * twinkleSpeed + twinklePhase) * twinkleIntensity;
+              // Animação de piscar - diferentes frequências para cada estrela
+              const blinkSpeed = 0.5 + animationSeed * 1.5; // Velocidade entre 0.5 e 2.0
+              const blinkPhase = animationSeed * Math.PI * 2; // Fase inicial aleatória
+              const blinkIntensity = 0.3 + animationSeed2 * 0.4; // Intensidade entre 0.3 e 0.7
+              const blinkFactor =
+                1 +
+                Math.sin(currentTime * blinkSpeed + blinkPhase) *
+                  blinkIntensity;
 
-              // Animação de pulso
-              const pulseSpeed = 0.1 + animationSeed2 * 0.3;
-              const pulsePhase = animationSeed2 * Math.PI * 2;
-              const pulseIntensity = layerConfig.pulseIntensity;
-              const pulseFactor = 1 + Math.sin(currentTime * pulseSpeed + pulsePhase) * pulseIntensity;
-
-              // Movimento flutuante
-              const floatSpeedX = (animationSeed - 0.5) * 0.5;
-              const floatSpeedY = (animationSeed2 - 0.5) * 0.3;
+              // Animação de movimento flutuante
+              const floatSpeedX = (animationSeed - 0.5) * 0.8; // Velocidade entre -0.4 e 0.4
+              const floatSpeedY = (animationSeed2 - 0.5) * 0.6; // Velocidade entre -0.3 e 0.3
               const floatPhaseX = animationSeed * Math.PI * 4;
               const floatPhaseY = animationSeed2 * Math.PI * 4;
-              const floatRange = baseSize * 0.3;
+              const floatRange = layer === 1 ? 0.3 : layer === 2 ? 0.5 : 0.8; // Movimento maior para estrelas maiores
 
-              const floatOffsetX = Math.sin(currentTime * floatSpeedX + floatPhaseX) * floatRange;
-              const floatOffsetY = Math.cos(currentTime * floatSpeedY + floatPhaseY) * floatRange;
+              const floatOffsetX =
+                Math.sin(currentTime * floatSpeedX + floatPhaseX) * floatRange;
+              const floatOffsetY =
+                Math.cos(currentTime * floatSpeedY + floatPhaseY) * floatRange;
 
-              const animatedSize = baseSize * twinkleFactor * pulseFactor;
-              const animatedOpacity = Math.min(1, baseOpacity * twinkleFactor);
+              const animatedSize = baseSize * blinkFactor;
+              const animatedOpacity = Math.min(1, baseOpacity * blinkFactor);
               const animatedX = screenX + floatOffsetX;
               const animatedY = screenY + floatOffsetY;
 
-              const isColorful = colorHash < layerConfig.colorChance;
-              const hasGlow = colorHash < layerConfig.glowChance;
+              const isColorful = layer === 3 && colorHash > 0.8;
               const color = isColorful
                 ? colors[Math.floor(colorHash * colors.length)]
                 : "#ffffff";
 
-              // Brilho baseado na distância do centro
-              const distanceFromCenter = Math.sqrt(
-                Math.pow(animatedX - canvasWidth / 2, 2) + 
-                Math.pow(animatedY - canvasHeight / 2, 2)
-              );
-              const maxDistance = Math.sqrt(canvasWidth * canvasWidth + canvasHeight * canvasHeight) / 2;
-              const distanceFactor = 1 - (distanceFromCenter / maxDistance) * 0.3;
-
-              ctx.globalAlpha = animatedOpacity * distanceFactor;
-
-              // Renderizar glow se aplicável
-              if (hasGlow && (isColorful || layerName === "ultra")) {
-                const glowSize = animatedSize * (3 + animationSeed3 * 2);
-                const gradient = ctx.createRadialGradient(
-                  animatedX, animatedY, 0,
-                  animatedX, animatedY, glowSize
-                );
-                
-                const glowOpacity = animatedOpacity * 0.3;
-                gradient.addColorStop(0, color + Math.floor(glowOpacity * 255).toString(16).padStart(2, '0'));
-                gradient.addColorStop(0.3, color + Math.floor(glowOpacity * 128).toString(16).padStart(2, '0'));
-                gradient.addColorStop(1, color + "00");
-                
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(animatedX, animatedY, glowSize, 0, Math.PI * 2);
-                ctx.fill();
-              }
-
-              // Renderizar estrela principal
+              ctx.globalAlpha = animatedOpacity;
               ctx.fillStyle = color;
-              ctx.beginPath();
-              
-              if (layerName === "ultra" || (layerName === "fg" && isColorful)) {
-                // Estrelas em formato de cruz para as maiores
-                const crossSize = animatedSize;
-                ctx.fillRect(animatedX - crossSize, animatedY - crossSize/4, crossSize * 2, crossSize/2);
-                ctx.fillRect(animatedX - crossSize/4, animatedY - crossSize, crossSize/2, crossSize * 2);
-              } else {
-                // Estrelas circulares normais
-                ctx.arc(animatedX, animatedY, animatedSize, 0, Math.PI * 2);
+
+              if (isColorful) {
+                const gradient = ctx.createRadialGradient(
+                  animatedX,
+                  animatedY,
+                  0,
+                  animatedX,
+                  animatedY,
+                  animatedSize * 2.5,
+                );
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(0.4, color + "77");
+                gradient.addColorStop(1, color + "00");
+                ctx.fillStyle = gradient;
+
+                ctx.beginPath();
+                ctx.arc(
+                  animatedX,
+                  animatedY,
+                  animatedSize * 2.5,
+                  0,
+                  Math.PI * 2,
+                );
                 ctx.fill();
+
+                ctx.fillStyle = color;
               }
+
+              ctx.beginPath();
+              ctx.arc(animatedX, animatedY, animatedSize, 0, Math.PI * 2);
+              ctx.fill();
             }
           }
         }
       }
     };
 
-    // Renderiza todas as camadas
-    generateLayer(12, 0.03, 1, "bg");     // Background - mais estrelas, movimento muito lento
-    generateLayer(8, 0.12, 2, "mid");     // Middle - movimento médio
-    generateLayer(4, 0.28, 3, "fg");      // Foreground - movimento rápido
-    generateLayer(1, 0.45, 4, "ultra");   // Ultra - estrelas especiais
+    // Renderiza camadas
+    generateLayer(8, 0.08, 1); // Background
+    generateLayer(4, 0.25, 2); // Middle
+    generateLayer(2, 0.5, 3); // Foreground
 
     ctx.globalAlpha = 1;
   }, [mapX, mapY]);
@@ -1154,7 +1085,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         </motion.div>
       )}
 
-      {/* Canvas para estrelas com parallax avançado */}
+      {/* Canvas para estrelas com parallax otimizado */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
@@ -1165,33 +1096,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         }}
       />
 
-      {/* Nebulosas de fundo com gradientes mais complexos */}
+      {/* Nebulosas de fundo */}
       <div className="absolute inset-0 pointer-events-none">
         <div
-          className="absolute w-96 h-96 rounded-full opacity-8 blur-3xl"
+          className="absolute w-64 h-64 rounded-full opacity-10 blur-3xl"
           style={{
-            background: "radial-gradient(circle, #374151 0%, #1f2937 40%, transparent 70%)",
-            left: "15%",
-            top: "25%",
-            animation: "float 20s ease-in-out infinite",
+            background: "radial-gradient(circle, #374151, #1f2937)",
+            left: "20%",
+            top: "30%",
           }}
         />
         <div
-          className="absolute w-80 h-80 rounded-full opacity-6 blur-2xl"
+          className="absolute w-48 h-48 rounded-full opacity-8 blur-2xl"
           style={{
-            background: "radial-gradient(circle, #1f2937 0%, #111827 50%, transparent 80%)",
-            right: "20%",
-            bottom: "15%",
-            animation: "float 25s ease-in-out infinite reverse",
-          }}
-        />
-        <div
-          className="absolute w-64 h-64 rounded-full opacity-4 blur-xl"
-          style={{
-            background: "radial-gradient(circle, #312e81 0%, #1e1b4b 60%, transparent 90%)",
-            left: "60%",
-            top: "10%",
-            animation: "float 30s ease-in-out infinite",
+            background: "radial-gradient(circle, #1f2937, #111827)",
+            right: "25%",
+            bottom: "20%",
           }}
         />
       </div>
@@ -1298,16 +1218,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/20 text-xs font-mono font-thin">
         X: {mapX.get().toFixed(1)} Y: {mapY.get().toFixed(1)}
       </div>
-
-      {/* Animações CSS para nebulosas */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
-          25% { transform: translateY(-20px) translateX(10px) scale(1.05); }
-          50% { transform: translateY(-10px) translateX(-15px) scale(0.95); }
-          75% { transform: translateY(15px) translateX(5px) scale(1.02); }
-        }
-      `}</style>
     </div>
   );
 };
