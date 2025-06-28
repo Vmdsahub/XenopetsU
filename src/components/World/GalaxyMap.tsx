@@ -553,21 +553,91 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Fundo de estrelas fixo e simples */}
+      {/* Fundo de estrelas com parallax */}
       <div className="absolute inset-0 pointer-events-none">
-        {stars.map((star) => (
-          <div
-            key={star.id}
-            className="absolute bg-white rounded-full"
-            style={{
-              left: `${star.x}%`,
-              top: `${star.y}%`,
-              width: `${star.size}px`,
-              height: `${star.size}px`,
-              opacity: star.opacity,
-            }}
-          />
-        ))}
+        {/* Camada de fundo - movimento mais lento */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            x: mapX.get() * starLayers.background[0]?.speed || 0,
+            y: mapY.get() * starLayers.background[0]?.speed || 0,
+          }}
+        >
+          {starLayers.background.map((star) => (
+            <div
+              key={`bg-${star.id}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                backgroundColor: star.color,
+                opacity: star.opacity,
+                boxShadow:
+                  star.color !== "#ffffff"
+                    ? `0 0 ${star.size * 2}px ${star.color}`
+                    : "none",
+              }}
+            />
+          ))}
+        </motion.div>
+
+        {/* Camada média */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            x: mapX.get() * starLayers.middle[0]?.speed || 0,
+            y: mapY.get() * starLayers.middle[0]?.speed || 0,
+          }}
+        >
+          {starLayers.middle.map((star) => (
+            <div
+              key={`mid-${star.id}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                backgroundColor: star.color,
+                opacity: star.opacity,
+                boxShadow:
+                  star.color !== "#ffffff"
+                    ? `0 0 ${star.size * 2}px ${star.color}`
+                    : "none",
+              }}
+            />
+          ))}
+        </motion.div>
+
+        {/* Camada frontal com estrelas coloridas */}
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            x: mapX.get() * starLayers.foreground[0]?.speed || 0,
+            y: mapY.get() * starLayers.foreground[0]?.speed || 0,
+          }}
+        >
+          {starLayers.foreground.map((star) => (
+            <div
+              key={`fg-${star.id}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                backgroundColor: star.color,
+                opacity: star.opacity,
+                boxShadow:
+                  star.color !== "#ffffff"
+                    ? `0 0 ${star.size * 3}px ${star.color}66`
+                    : "none",
+              }}
+            />
+          ))}
+        </motion.div>
       </div>
 
       {/* Nebulosas de fundo */}
