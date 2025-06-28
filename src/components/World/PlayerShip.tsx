@@ -52,16 +52,16 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       />
 
       {/* Ship trails - positioned at the back of the ship */}
-      {isDragging && (
+      {(isDragging || isDecelerating) && (
         <>
           <motion.div
             className="absolute top-full left-1/2 w-0.5 h-4 bg-gradient-to-t from-transparent to-blue-400 transform -translate-x-1/2"
             animate={{
-              opacity: [0.3, 0.8, 0.3],
-              scaleY: [0.5, 1, 0.5],
+              opacity: isDragging ? [0.3, 0.8, 0.3] : [0.8, 0.2, 0.8],
+              scaleY: isDragging ? [0.5, 1, 0.5] : [1, 0.3, 1],
             }}
             transition={{
-              duration: 0.5,
+              duration: isDragging ? 0.5 : 1.0,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -69,17 +69,49 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
           <motion.div
             className="absolute top-full left-1/2 w-0.5 h-3 bg-gradient-to-t from-transparent to-cyan-300 transform -translate-x-1/2 translate-y-1"
             animate={{
-              opacity: [0.2, 0.6, 0.2],
-              scaleY: [0.3, 1, 0.3],
+              opacity: isDragging ? [0.2, 0.6, 0.2] : [0.6, 0.1, 0.6],
+              scaleY: isDragging ? [0.3, 1, 0.3] : [1, 0.2, 1],
             }}
             transition={{
-              duration: 0.3,
+              duration: isDragging ? 0.3 : 0.8,
               repeat: Infinity,
               ease: "easeInOut",
               delay: 0.1,
             }}
           />
         </>
+      )}
+
+      {/* Efeito de momentum - partículas sutis quando em desaceleração */}
+      {isDecelerating && (
+        <motion.div
+          className="absolute top-full left-1/2 transform -translate-x-1/2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          {[...Array(3)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-0.5 h-0.5 bg-blue-300 rounded-full"
+              style={{
+                left: `${(i - 1) * 3}px`,
+                top: `${i * 2 + 2}px`,
+              }}
+              animate={{
+                opacity: [0, 0.6, 0],
+                scale: [0, 1, 0],
+                y: [0, 8, 16],
+              }}
+              transition={{
+                duration: 1.2,
+                repeat: Infinity,
+                delay: i * 0.2,
+                ease: "easeOut",
+              }}
+            />
+          ))}
+        </motion.div>
       )}
     </motion.div>
   );
