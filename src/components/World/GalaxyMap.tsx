@@ -254,6 +254,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
+    // Tempo atual para animações
+    const currentTime = Date.now() * 0.001; // Converte para segundos
+
     const colors = [
       "#60A5FA",
       "#F87171",
@@ -325,36 +328,66 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               const opacityHash = hash(worldX * 1.7, worldY * 1.9, layer);
               const colorHash = hash(worldX * 2.1, worldY * 2.3, layer);
 
-              const size =
+              // Hash para animações únicas de cada estrela
+              const animationSeed = hash(worldX * 3.7, worldY * 4.1, layer);
+              const animationSeed2 = hash(worldX * 5.3, worldY * 6.7, layer);
+
+              const baseSize =
                 layer === 1
                   ? 0.3 + sizeHash * 0.5
                   : layer === 2
                     ? 0.6 + sizeHash * 0.6
                     : 1.0 + sizeHash * 1.0;
 
-              const opacity =
+              const baseOpacity =
                 layer === 1
                   ? 0.1 + opacityHash * 0.3
                   : layer === 2
                     ? 0.2 + opacityHash * 0.4
                     : 0.4 + opacityHash * 0.5;
 
+              // Animação de piscar - diferentes frequências para cada estrela
+              const blinkSpeed = 0.5 + animationSeed * 1.5; // Velocidade entre 0.5 e 2.0
+              const blinkPhase = animationSeed * Math.PI * 2; // Fase inicial aleatória
+              const blinkIntensity = 0.3 + animationSeed2 * 0.4; // Intensidade entre 0.3 e 0.7
+              const blinkFactor =
+                1 +
+                Math.sin(currentTime * blinkSpeed + blinkPhase) *
+                  blinkIntensity;
+
+              // Animação de movimento flutuante
+              const floatSpeedX = (animationSeed - 0.5) * 0.8; // Velocidade entre -0.4 e 0.4
+              const floatSpeedY = (animationSeed2 - 0.5) * 0.6; // Velocidade entre -0.3 e 0.3
+              const floatPhaseX = animationSeed * Math.PI * 4;
+              const floatPhaseY = animationSeed2 * Math.PI * 4;
+              const floatRange = layer === 1 ? 0.3 : layer === 2 ? 0.5 : 0.8; // Movimento maior para estrelas maiores
+
+              const floatOffsetX =
+                Math.sin(currentTime * floatSpeedX + floatPhaseX) * floatRange;
+              const floatOffsetY =
+                Math.cos(currentTime * floatSpeedY + floatPhaseY) * floatRange;
+
+              const animatedSize = baseSize * blinkFactor;
+              const animatedOpacity = Math.min(1, baseOpacity * blinkFactor);
+              const animatedX = screenX + floatOffsetX;
+              const animatedY = screenY + floatOffsetY;
+
               const isColorful = layer === 3 && colorHash > 0.8;
               const color = isColorful
                 ? colors[Math.floor(colorHash * colors.length)]
                 : "#ffffff";
 
-              ctx.globalAlpha = opacity;
+              ctx.globalAlpha = animatedOpacity;
               ctx.fillStyle = color;
 
               if (isColorful) {
                 const gradient = ctx.createRadialGradient(
-                  screenX,
-                  screenY,
+                  animatedX,
+                  animatedY,
                   0,
-                  screenX,
-                  screenY,
-                  size * 2.5,
+                  animatedX,
+                  animatedY,
+                  animatedSize * 2.5,
                 );
                 gradient.addColorStop(0, color);
                 gradient.addColorStop(0.4, color + "77");
@@ -362,14 +395,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
                 ctx.fillStyle = gradient;
 
                 ctx.beginPath();
-                ctx.arc(screenX, screenY, size * 2.5, 0, Math.PI * 2);
+                ctx.arc(
+                  animatedX,
+                  animatedY,
+                  animatedSize * 2.5,
+                  0,
+                  Math.PI * 2,
+                );
                 ctx.fill();
 
                 ctx.fillStyle = color;
               }
 
               ctx.beginPath();
-              ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+              ctx.arc(animatedX, animatedY, animatedSize, 0, Math.PI * 2);
               ctx.fill();
             }
           }
@@ -952,7 +991,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           willChange: "transform", // otimização para GPU
         }}
       >
-        /* Barreira circular fixa no centro do mapa */
+        {/* Barreira circular fixa no centro do mapa */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -966,20 +1005,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             zIndex: 5,
           }}
         />
-        {/* Renderiza apenas 3 cópias para melhor performance */}
+        {/* Renderiza apenas uma vez */}
         <div className="absolute inset-0">{renderPoints()}</div>
-        <div
-          className="absolute inset-0"
-          style={{ transform: "translateX(100%)" }}
-        >
-          {renderPoints()}
-        </div>
-        <div
-          className="absolute inset-0"
-          style={{ transform: "translateX(-100%)" }}
-        >
-          {renderPoints()}
-        </div>
       </motion.div>
 
       {/* Nave do jogador - fixa no centro */}
