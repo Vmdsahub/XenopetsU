@@ -37,13 +37,8 @@ export const WorldScreen: React.FC = () => {
             >
               {/* Header */}
               <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-100">
-                <div className="text-center">
-                  <h3 className="font-bold text-xl text-gray-900">
-                    Mapa Galáctico
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Explore mundos desconhecidos
-                  </p>
+                <div className="text-center text-xl text-gray-900">
+                  Xenoverse
                 </div>
               </div>
 
