@@ -127,6 +127,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const mapY = useMotionValue(0);
   const shipRotation = useMotionValue(0);
 
+  // Estados para momentum/inércia
+  const [velocity, setVelocity] = useState({ x: 0, y: 0 });
+  const [isDecelerating, setIsDecelerating] = useState(false);
+  const velocityRef = useRef({ x: 0, y: 0 });
+  const lastMoveTime = useRef(Date.now());
+
   // Estrelas fixas
   const stars = useMemo(() => {
     return Array.from({ length: 150 }, (_, i) => ({
