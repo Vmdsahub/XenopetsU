@@ -1119,6 +1119,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         }}
       />
 
+      {/* Estrelas cadentes raras */}
+      {canvasDimensions.width > 0 && canvasDimensions.height > 0 && (
+        <ShootingStars
+          width={canvasDimensions.width}
+          height={canvasDimensions.height}
+        />
+      )}
+
       {/* Nebulosas de fundo */}
       <div className="absolute inset-0 pointer-events-none">
         <div
