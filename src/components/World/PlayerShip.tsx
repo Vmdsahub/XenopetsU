@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, MotionValue } from "framer-motion";
+import { startEngineSound, stopEngineSound } from "../../utils/soundManager";
 
 interface PlayerShipProps {
   rotation: MotionValue<number>;
