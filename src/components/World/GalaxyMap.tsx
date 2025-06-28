@@ -642,7 +642,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     // Verifica colisão com barreira circular
     const centerX = WORLD_CONFIG.width / 2; // 100%
     const centerY = WORLD_CONFIG.height / 2; // 100%
-    const barrierRadius = 35; // Raio em % (700px de um canvas ~1400px = ~35%)
+    const barrierRadius = 70; // Raio em % (1400px de diâmetro = 700px de raio = ~70%)
 
     const distanceFromCenter = Math.sqrt(
       Math.pow(proposedX - centerX, 2) + Math.pow(proposedY - centerY, 2),
