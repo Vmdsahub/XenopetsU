@@ -138,15 +138,54 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const lastMoveTime = useRef(Date.now());
   const [hasMoved, setHasMoved] = useState(false);
 
-  // Sistema de estrelas simplificado
-  const stars = useMemo(() => {
-    return Array.from({ length: 200 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: 0.5 + Math.random() * 1,
-      opacity: 0.3 + Math.random() * 0.7,
-    }));
+  // Sistema de estrelas com parallax
+  const starLayers = useMemo(() => {
+    const colors = [
+      "#60A5FA",
+      "#F87171",
+      "#34D399",
+      "#FBBF24",
+      "#A78BFA",
+      "#FB7185",
+    ];
+
+    return {
+      // Camada de fundo - mais lenta
+      background: Array.from({ length: 150 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 0.5 + Math.random() * 0.8,
+        opacity: 0.2 + Math.random() * 0.4,
+        color: "#ffffff",
+        speed: 0.1,
+      })),
+
+      // Camada média
+      middle: Array.from({ length: 80 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 0.8 + Math.random() * 1.2,
+        opacity: 0.4 + Math.random() * 0.5,
+        color: "#ffffff",
+        speed: 0.3,
+      })),
+
+      // Camada frontal com estrelas coloridas
+      foreground: Array.from({ length: 25 }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 1 + Math.random() * 1.5,
+        opacity: 0.6 + Math.random() * 0.4,
+        color:
+          Math.random() < 0.7
+            ? "#ffffff"
+            : colors[Math.floor(Math.random() * colors.length)],
+        speed: 0.6,
+      })),
+    };
   }, []);
 
   // Posição da nave em ref para evitar re-renders
