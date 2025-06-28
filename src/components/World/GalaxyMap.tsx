@@ -593,12 +593,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       {/* Coordenadas */}
       <motion.div
-        className="absolute top-12 left-4 px-3 py-1 rounded-lg text-xs backdrop-blur-sm border bg-black/70 text-gray-300 border-gray-400/40"
+        className="absolute top-12 left-4 px-3 py-2 rounded-lg text-xs backdrop-blur-sm border bg-black/70 text-gray-300 border-gray-400/40"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        X: {Math.round(shipPosition.x)} Y: {Math.round(shipPosition.y)}
+        <div className="font-mono">
+          <div>X: {shipPosition.x.toFixed(2)}</div>
+          <div>Y: {shipPosition.y.toFixed(2)}</div>
+        </div>
       </motion.div>
 
       {/* Ponto próximo */}
