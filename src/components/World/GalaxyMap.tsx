@@ -244,7 +244,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Função de renderização Canvas otimizada
+  // Função de renderização Canvas com distribuição uniforme perfeita
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -260,69 +260,86 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
-    // Função para renderizar camada de estrelas
+    // Função para renderizar camada de estrelas com wrap seamless perfeito
     const renderLayer = (stars: typeof starData.background, speed: number) => {
+      // Calcula o tamanho do tile base para wrap seamless
+      const baseTileWidth = canvasWidth;
+      const baseTileHeight = canvasHeight;
+
       stars.forEach((star) => {
-        // Calcula posição com parallax
+        // Posição base da estrela (0-100 normalizado para 0-canvas)
+        const baseX = (star.x / 100) * baseTileWidth;
+        const baseY = (star.y / 100) * baseTileHeight;
+
+        // Aplica parallax
         const parallaxX = currentMapX * speed;
         const parallaxY = currentMapY * speed;
 
-        // Converte coordenadas do mundo para canvas
-        const worldToCanvasScale = canvasWidth / (WORLD_CONFIG.width * 3); // 300% width
-        let x = (star.x / WORLD_CONFIG.width) * canvasWidth + parallaxX;
-        let y = (star.y / WORLD_CONFIG.height) * canvasHeight + parallaxY;
+        // Calcula posição com parallax
+        const starX = baseX + parallaxX;
+        const starY = baseY + parallaxY;
 
-        // Renderiza com wrap contínuo para distribuição uniforme
-        const tileX = canvasWidth * 1.5;
-        const tileY = canvasHeight * 1.5;
+        // Normaliza para criar wrap seamless
+        const wrappedX =
+          ((starX % baseTileWidth) + baseTileWidth) % baseTileWidth;
+        const wrappedY =
+          ((starY % baseTileHeight) + baseTileHeight) % baseTileHeight;
 
-        for (let i = -2; i <= 2; i++) {
-          for (let j = -2; j <= 2; j++) {
-            const finalX = x + i * tileX;
-            const finalY = y + j * tileY;
+        // Renderiza múltiplas cópias para garantir cobertura completa nas bordas
+        const renderPositions = [
+          { x: wrappedX, y: wrappedY },
+          { x: wrappedX - baseTileWidth, y: wrappedY },
+          { x: wrappedX + baseTileWidth, y: wrappedY },
+          { x: wrappedX, y: wrappedY - baseTileHeight },
+          { x: wrappedX, y: wrappedY + baseTileHeight },
+          { x: wrappedX - baseTileWidth, y: wrappedY - baseTileHeight },
+          { x: wrappedX + baseTileWidth, y: wrappedY - baseTileHeight },
+          { x: wrappedX - baseTileWidth, y: wrappedY + baseTileHeight },
+          { x: wrappedX + baseTileWidth, y: wrappedY + baseTileHeight },
+        ];
 
-            // Culling - só renderiza se estiver visível
-            if (
-              finalX < -star.size ||
-              finalX > canvasWidth + star.size ||
-              finalY < -star.size ||
-              finalY > canvasHeight + star.size
-            ) {
-              continue;
-            }
+        renderPositions.forEach(({ x, y }) => {
+          // Culling otimizado
+          if (
+            x < -star.size * 2 ||
+            x > canvasWidth + star.size * 2 ||
+            y < -star.size * 2 ||
+            y > canvasHeight + star.size * 2
+          ) {
+            return;
+          }
 
-            // Renderiza estrela
-            ctx.globalAlpha = star.opacity;
-            ctx.fillStyle = star.color;
+          // Renderiza estrela
+          ctx.globalAlpha = star.opacity;
+          ctx.fillStyle = star.color;
 
-            if (star.isColorful) {
-              // Estrelas coloridas com glow
-              const gradient = ctx.createRadialGradient(
-                finalX,
-                finalY,
-                0,
-                finalX,
-                finalY,
-                star.size * 2,
-              );
-              gradient.addColorStop(0, star.color);
-              gradient.addColorStop(0.5, star.color + "88");
-              gradient.addColorStop(1, star.color + "00");
-              ctx.fillStyle = gradient;
-
-              ctx.beginPath();
-              ctx.arc(finalX, finalY, star.size * 2, 0, Math.PI * 2);
-              ctx.fill();
-
-              // Centro mais brilhante
-              ctx.fillStyle = star.color;
-            }
+          if (star.isColorful) {
+            // Estrelas coloridas com glow
+            const gradient = ctx.createRadialGradient(
+              x,
+              y,
+              0,
+              x,
+              y,
+              star.size * 2,
+            );
+            gradient.addColorStop(0, star.color);
+            gradient.addColorStop(0.5, star.color + "88");
+            gradient.addColorStop(1, star.color + "00");
+            ctx.fillStyle = gradient;
 
             ctx.beginPath();
-            ctx.arc(finalX, finalY, star.size, 0, Math.PI * 2);
+            ctx.arc(x, y, star.size * 2, 0, Math.PI * 2);
             ctx.fill();
+
+            // Centro mais brilhante
+            ctx.fillStyle = star.color;
           }
-        }
+
+          ctx.beginPath();
+          ctx.arc(x, y, star.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
       });
     };
 
