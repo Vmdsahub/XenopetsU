@@ -255,19 +255,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         let x = (star.x / WORLD_CONFIG.width) * canvasWidth + parallaxX;
         let y = (star.y / WORLD_CONFIG.height) * canvasHeight + parallaxY;
 
-        // Renderiza múltiplas cópias para efeito wrap seamless
-        for (
-          let offsetX = -canvasWidth;
-          offsetX <= canvasWidth;
-          offsetX += canvasWidth
-        ) {
-          for (
-            let offsetY = -canvasHeight;
-            offsetY <= canvasHeight;
-            offsetY += canvasHeight
-          ) {
-            const finalX = x + offsetX;
-            const finalY = y + offsetY;
+        // Renderiza com wrap contínuo para distribuição uniforme
+        const tileX = canvasWidth * 1.5;
+        const tileY = canvasHeight * 1.5;
+
+        for (let i = -2; i <= 2; i++) {
+          for (let j = -2; j <= 2; j++) {
+            const finalX = x + i * tileX;
+            const finalY = y + j * tileY;
 
             // Culling - só renderiza se estiver visível
             if (
