@@ -26,8 +26,8 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       }}
       transition={{
         scale: { type: "spring", stiffness: 300, damping: 30 },
-        y: { duration: 1.8, repeat: Infinity, ease: "easeInOut" },
-        x: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
+        y: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
+        x: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
       }}
     >
       {/* Spaceship Image */}
@@ -41,7 +41,7 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       {isDragging && (
         <>
           <motion.div
-            className="absolute left-1/2 w-0.5 h-4 bg-gradient-to-t from-transparent to-blue-400 transform -translate-x-1/2"
+            className="absolute left-1/2 w-0.5 h-6 bg-gradient-to-t from-transparent to-blue-400 transform -translate-x-1/2"
             style={{ top: "calc(100% - 6px)" }}
             animate={{
               opacity: [0.3, 0.8, 0.3],
@@ -54,7 +54,7 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
             }}
           />
           <motion.div
-            className="absolute left-1/2 w-0.5 h-3 bg-gradient-to-t from-transparent to-cyan-300 transform -translate-x-1/2"
+            className="absolute left-1/2 w-0.5 h-5 bg-gradient-to-t from-transparent to-cyan-300 transform -translate-x-1/2"
             style={{ top: "calc(100% - 2px)" }}
             animate={{
               opacity: [0.2, 0.6, 0.2],
