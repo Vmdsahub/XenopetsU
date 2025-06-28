@@ -350,9 +350,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       if (angleDiff > 180) angleDiff -= 360;
       if (angleDiff < -180) angleDiff += 360;
 
-      // Aplica a rotação suave tomando o caminho mais curto
-      const targetAngle = currentAngle + angleDiff;
-      animate(shipRotation, targetAngle, { duration: 0.05, ease: "easeOut" });
+      // Se o ângulo tem wrap (mudança grande), usa animação muito rápida
+      // Caso contrário, aplica direto para máxima responsividade
+      if (Math.abs(angleDiff) > 120) {
+        const targetAngle = currentAngle + angleDiff;
+        animate(shipRotation, targetAngle, { duration: 0.01, ease: "linear" });
+      } else {
+        shipRotation.set(newAngle);
+      }
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -428,9 +433,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         if (angleDiff > 180) angleDiff -= 360;
         if (angleDiff < -180) angleDiff += 360;
 
-        // Aplica a rotação suave tomando o caminho mais curto
-        const targetAngle = currentAngle + angleDiff;
-        animate(shipRotation, targetAngle, { duration: 0.05, ease: "easeOut" });
+        // Se o ângulo tem wrap (mudança grande), usa animação muito rápida
+        // Caso contrário, aplica direto para máxima responsividade
+        if (Math.abs(angleDiff) > 120) {
+          const targetAngle = currentAngle + angleDiff;
+          animate(shipRotation, targetAngle, {
+            duration: 0.01,
+            ease: "linear",
+          });
+        } else {
+          shipRotation.set(newAngle);
+        }
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
