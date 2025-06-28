@@ -551,6 +551,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const normalizedY = repelDirectionY / distance;
       const repelForce = 15; // Força da repulsão
 
+      // Para o movimento atual imediatamente
+      setVelocity({ x: 0, y: 0 });
+      setIsDecelerating(false);
+
       // Aplica repulsão ao mapa (movimento inverso)
       const currentMapX = mapX.get();
       const currentMapY = mapY.get();
@@ -1075,25 +1079,23 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Notificação de Colisão */}
+      {/* Notificação de Colisão - Centralizada e Transparente */}
       {collisionNotification.show && (
         <motion.div
-          className="absolute top-4 left-4 right-4 z-50 bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-2xl shadow-2xl border-2 border-red-300"
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500/80 backdrop-blur-sm text-white p-4 rounded-2xl shadow-2xl border border-red-400/50 max-w-xs"
           initial={{ opacity: 0, y: -50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -50, scale: 0.9 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
         >
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-lg">⚠️</span>
+          <div className="text-center">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <span className="text-xl">⚠️</span>
+              <h4 className="font-bold text-sm">Colisão Detectada!</h4>
             </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-lg mb-1">Colisão Detectada!</h4>
-              <p className="text-sm text-white/90 leading-relaxed">
-                Ei! A sua Xenoship mal aguenta a força da gravidade, esqueceu que ela é muito frágil pra explorar os cosmos?
-              </p>
-            </div>
+            <p className="text-xs text-white/90 leading-relaxed">
+              Ei! A sua Xenoship mal aguenta a força da gravidade, esqueceu que ela é muito frágil pra explorar os cosmos?
+            </p>
           </div>
         </motion.div>
       )}
