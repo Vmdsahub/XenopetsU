@@ -229,6 +229,123 @@ const playNotificationBeep = (): Promise<void> => {
   });
 };
 
+/**
+ * Engine sound manager for ship motors
+ */
+class EngineSound {
+  private audioContext: AudioContext | null = null;
+  private oscillator: OscillatorNode | null = null;
+  private gainNode: GainNode | null = null;
+  private isPlaying = false;
+
+  start(): void {
+    if (this.isPlaying) return;
+
+    try {
+      this.audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+
+      // Create multiple oscillators for richer sound
+      const osc1 = this.audioContext.createOscillator();
+      const osc2 = this.audioContext.createOscillator();
+      const osc3 = this.audioContext.createOscillator();
+
+      const gain1 = this.audioContext.createGain();
+      const gain2 = this.audioContext.createGain();
+      const gain3 = this.audioContext.createGain();
+      const masterGain = this.audioContext.createGain();
+
+      // Connect oscillators to individual gains, then to master
+      osc1.connect(gain1);
+      osc2.connect(gain2);
+      osc3.connect(gain3);
+
+      gain1.connect(masterGain);
+      gain2.connect(masterGain);
+      gain3.connect(masterGain);
+      masterGain.connect(this.audioContext.destination);
+
+      // Futuristic spaceship engine: clean sine waves with harmonics
+      osc1.type = "sine";
+      osc2.type = "sine";
+      osc3.type = "triangle";
+
+      // Base frequency and harmonics for spaceship hum
+      osc1.frequency.setValueAtTime(120, this.audioContext.currentTime);
+      osc2.frequency.setValueAtTime(240, this.audioContext.currentTime); // octave
+      osc3.frequency.setValueAtTime(180, this.audioContext.currentTime); // fifth
+
+      // Subtle modulation for alive engine feeling
+      const lfo = this.audioContext.createOscillator();
+      const lfoGain = this.audioContext.createGain();
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc1.frequency);
+      lfoGain.connect(osc2.frequency);
+
+      lfo.type = "sine";
+      lfo.frequency.setValueAtTime(3, this.audioContext.currentTime);
+      lfoGain.gain.setValueAtTime(8, this.audioContext.currentTime);
+
+      // Individual oscillator volumes
+      gain1.gain.setValueAtTime(0.04, this.audioContext.currentTime);
+      gain2.gain.setValueAtTime(0.02, this.audioContext.currentTime);
+      gain3.gain.setValueAtTime(0.015, this.audioContext.currentTime);
+
+      // Master volume envelope
+      masterGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+      masterGain.gain.linearRampToValueAtTime(
+        1,
+        this.audioContext.currentTime + 0.2,
+      );
+
+      osc1.start();
+      osc2.start();
+      osc3.start();
+      lfo.start();
+
+      // Store references for cleanup
+      this.oscillator = osc1; // Keep reference for stop method
+      this.gainNode = masterGain;
+      this.isPlaying = true;
+    } catch (error) {
+      console.warn("Engine sound failed to start:", error);
+    }
+  }
+
+  stop(): void {
+    if (!this.isPlaying) return;
+
+    try {
+      if (this.gainNode && this.audioContext) {
+        // Fade out
+        this.gainNode.gain.linearRampToValueAtTime(
+          0,
+          this.audioContext.currentTime + 0.2,
+        );
+
+        setTimeout(() => {
+          if (this.oscillator) {
+            this.oscillator.stop();
+            this.oscillator = null;
+          }
+          if (this.audioContext) {
+            this.audioContext.close();
+            this.audioContext = null;
+          }
+          this.gainNode = null;
+          this.isPlaying = false;
+        }, 250);
+      }
+    } catch (error) {
+      console.warn("Engine sound failed to stop:", error);
+      this.isPlaying = false;
+    }
+  }
+}
+
+// Global engine sound instance
+const engineSound = new EngineSound();
+
 // Convenience functions
 export const playNotificationSound = (): Promise<void> => {
   // Try the Web Audio API notification first (more reliable)
@@ -239,4 +356,12 @@ export const playNotificationSound = (): Promise<void> => {
       // Don't throw error for notification sounds - they're non-critical
     });
   });
+};
+
+export const startEngineSound = (): void => {
+  engineSound.start();
+};
+
+export const stopEngineSound = (): void => {
+  engineSound.stop();
 };

@@ -520,7 +520,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           const effectiveShipX = centerVisualX - proposedMapX;
           const effectiveShipY = centerVisualY - proposedMapY;
 
-          const barrierRadius = 600;
+          const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio
           const distanceFromCenter = Math.sqrt(
             Math.pow(effectiveShipX - centerVisualX, 2) +
               Math.pow(effectiveShipY - centerVisualY, 2),
@@ -651,6 +651,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     // Verifica colisão com barreira circular usando coordenadas visuais
     let newX = proposedX;
     let newY = proposedY;
+    let allowMovement = true;
 
     const canvas = canvasRef.current;
     if (canvas) {
@@ -670,7 +671,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const effectiveShipX = centerVisualX - proposedMapX;
       const effectiveShipY = centerVisualY - proposedMapY;
 
-      const barrierRadius = 600; // 1200px de diâmetro = 600px de raio (2x maior)
+      const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio (2x maior)
       const distanceFromCenter = Math.sqrt(
         Math.pow(effectiveShipX - centerVisualX, 2) +
           Math.pow(effectiveShipY - centerVisualY, 2),
@@ -681,6 +682,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         // Não permite o movimento - mantém posição atual
         newX = shipPosRef.current.x;
         newY = shipPosRef.current.y;
+        allowMovement = false;
 
         // Para todo movimento
         setVelocity({ x: 0, y: 0 });
@@ -690,19 +692,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
     setShipPosition({ x: newX, y: newY });
 
-    // Atualiza mapa visual com wrap
-    let newMapX = mapX.get() + deltaX;
-    let newMapY = mapY.get() + deltaY;
+    // Só atualiza mapa visual se movimento é permitido
+    if (allowMovement) {
+      // Atualiza mapa visual com wrap
+      let newMapX = mapX.get() + deltaX;
+      let newMapY = mapY.get() + deltaY;
 
-    // Wrap visual do mapa expandido
-    const wrapThreshold = 5000;
-    if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
-    if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
-    if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
-    if (newMapY < -wrapThreshold) newMapY += wrapThreshold * 2;
+      // Wrap visual do mapa expandido
+      const wrapThreshold = 5000;
+      if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
+      if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
+      if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
+      if (newMapY < -wrapThreshold) newMapY += wrapThreshold * 2;
 
-    mapX.set(newMapX);
-    mapY.set(newMapY);
+      mapX.set(newMapX);
+      mapY.set(newMapY);
+    }
 
     // Rotação responsiva com interpolação suave
     if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
@@ -763,6 +768,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       // Verifica colisão com barreira circular usando coordenadas visuais
       let newX = proposedX;
       let newY = proposedY;
+      let allowMovement = true;
 
       const canvas = canvasRef.current;
       if (canvas) {
@@ -779,7 +785,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const effectiveShipX = centerVisualX - proposedMapX;
         const effectiveShipY = centerVisualY - proposedMapY;
 
-        const barrierRadius = 600;
+        const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio
         const distanceFromCenter = Math.sqrt(
           Math.pow(effectiveShipX - centerVisualX, 2) +
             Math.pow(effectiveShipY - centerVisualY, 2),
@@ -789,6 +795,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           // Não permite o movimento - mantém posição atual
           newX = shipPosRef.current.x;
           newY = shipPosRef.current.y;
+          allowMovement = false;
 
           setVelocity({ x: 0, y: 0 });
           setIsDecelerating(false);
@@ -797,19 +804,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       setShipPosition({ x: newX, y: newY });
 
-      // Atualiza mapa visual com wrap
-      let newMapX = mapX.get() + deltaX;
-      let newMapY = mapY.get() + deltaY;
+      // Só atualiza mapa visual se movimento é permitido
+      if (allowMovement) {
+        // Atualiza mapa visual com wrap
+        let newMapX = mapX.get() + deltaX;
+        let newMapY = mapY.get() + deltaY;
 
-      // Wrap visual do mapa quando sair muito longe
-      const wrapThreshold = 5000; // pixels antes de fazer wrap
-      if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
-      if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
-      if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
-      if (newMapY < -wrapThreshold) newMapY += wrapThreshold * 2;
+        // Wrap visual do mapa quando sair muito longe
+        const wrapThreshold = 5000; // pixels antes de fazer wrap
+        if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
+        if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
+        if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
+        if (newMapY < -wrapThreshold) newMapY += wrapThreshold * 2;
 
-      mapX.set(newMapX);
-      mapY.set(newMapY);
+        mapX.set(newMapX);
+        mapY.set(newMapY);
+      }
 
       if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
         setHasMoved(true);
@@ -942,21 +952,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           willChange: "transform", // otimização para GPU
         }}
       >
-        {/* Barreira circular fixa no centro do mapa */}
+        /* Barreira circular fixa no centro do mapa */
         <div
           className="absolute pointer-events-none"
           style={{
             left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
             top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
-            width: "1200px", // Diâmetro 1200px = 600px de raio
-            height: "1200px",
+            width: "2400px", // Diâmetro 2400px = 1200px de raio (2x maior)
+            height: "2400px",
             transform: "translate(-50%, -50%)",
             border: "2px dashed rgba(255, 255, 255, 0.15)",
             borderRadius: "50%",
             zIndex: 5,
           }}
         />
-
         {/* Renderiza apenas 3 cópias para melhor performance */}
         <div className="absolute inset-0">{renderPoints()}</div>
         <div

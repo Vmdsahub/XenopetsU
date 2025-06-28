@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, MotionValue } from "framer-motion";
+import { startEngineSound, stopEngineSound } from "../../utils/soundManager";
 
 interface PlayerShipProps {
   rotation: MotionValue<number>;
@@ -19,10 +20,12 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
   useEffect(() => {
     if (isDragging) {
       setShowTrail(true);
+      startEngineSound();
     } else {
       const timeout = setTimeout(() => {
         setShowTrail(false);
       }, 200);
+      stopEngineSound();
       return () => clearTimeout(timeout);
     }
   }, [isDragging]);
@@ -32,14 +35,22 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       style={{ rotate: rotation }}
       animate={{
         scale: isDragging ? 1.1 : 1,
-        // Flutuação sutil indicando que está ligada
-        y: isDragging ? 0 : [0, -2, 0, 2, 0],
-        x: isDragging ? 0 : [0, 1.5, 0, -1.5, 0],
+        // Vibração quando dragging (motor ligado) ou flutuação quando parado
+        y: isDragging ? [0, -0.5, 0, 0.5, 0] : [0, -2, 0, 2, 0],
+        x: isDragging ? [0, 0.5, 0, -0.5, 0] : [0, 1.5, 0, -1.5, 0],
       }}
       transition={{
         scale: { type: "spring", stiffness: 300, damping: 30 },
-        y: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
-        x: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
+        y: {
+          duration: isDragging ? 0.15 : 2.2,
+          repeat: Infinity,
+          ease: isDragging ? "linear" : "easeInOut",
+        },
+        x: {
+          duration: isDragging ? 0.12 : 2.8,
+          repeat: Infinity,
+          ease: isDragging ? "linear" : "easeInOut",
+        },
       }}
     >
       {/* Spaceship Image */}
