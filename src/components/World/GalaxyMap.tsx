@@ -520,30 +520,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           const effectiveShipX = centerVisualX - proposedMapX;
           const effectiveShipY = centerVisualY - proposedMapY;
 
-          const barrierRadius = 300;
+          const barrierRadius = 600;
           const distanceFromCenter = Math.sqrt(
             Math.pow(effectiveShipX - centerVisualX, 2) +
               Math.pow(effectiveShipY - centerVisualY, 2),
           );
 
           if (distanceFromCenter > barrierRadius) {
-            const angle = Math.atan2(
-              effectiveShipY - centerVisualY,
-              effectiveShipX - centerVisualX,
-            );
-            const limitX =
-              centerVisualX + Math.cos(angle) * (barrierRadius - 10);
-            const limitY =
-              centerVisualY + Math.sin(angle) * (barrierRadius - 10);
-
-            const limitMapX = centerVisualX - limitX;
-            const limitMapY = centerVisualY - limitY;
-            newX = shipPosRef.current.x - (limitMapX - currentMapX) / 12;
-            newY = shipPosRef.current.y - (limitMapY - currentMapY) / 12;
-
-            newX = wrap(newX, 0, WORLD_CONFIG.width);
-            newY = wrap(newY, 0, WORLD_CONFIG.height);
-
+            // Para o momentum completamente e mantém posição atual
             setIsDecelerating(false);
             setVelocity({ x: 0, y: 0 });
             return;
