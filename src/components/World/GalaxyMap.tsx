@@ -181,12 +181,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
         // Aplica movimento com momentum - movimento mais suave
         const newX = wrap(
-          shipPosRef.current.x - newVelX / 4,
+          shipPosRef.current.x - newVelX / 8,
           0,
           WORLD_CONFIG.width,
         );
         const newY = wrap(
-          shipPosRef.current.y - newVelY / 4,
+          shipPosRef.current.y - newVelY / 8,
           0,
           WORLD_CONFIG.height,
         );
@@ -194,8 +194,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         setShipPosition({ x: newX, y: newY });
 
         // Atualiza mapa visual de forma mais suave
-        const newMapX = mapX.get() + newVelX * 0.8;
-        const newMapY = mapY.get() + newVelY * 0.8;
+        const newMapX = mapX.get() + newVelX * 0.5;
+        const newMapY = mapY.get() + newVelY * 0.5;
 
         mapX.set(newMapX);
         mapY.set(newMapY);
