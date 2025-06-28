@@ -755,10 +755,18 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const proposedMapX = currentMapX + deltaMapX;
     const proposedMapY = currentMapY + deltaMapY;
 
-    if (checkBarrierCollision(proposedMapX, proposedMapY)) {
-      // Ativa flash vermelho e bloqueia movimento
+    const collision = checkBarrierCollision(proposedMapX, proposedMapY);
+    if (collision.isColliding) {
+      // Ativa flash vermelho, faíscas e som
       setIsColliding(true);
-      setTimeout(() => setIsColliding(false), 150);
+      setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+      if (collision.collisionPoint) {
+        createCollisionSparks(
+          collision.collisionPoint.x,
+          collision.collisionPoint.y,
+        );
+      }
+      playBarrierCollisionSound().catch(() => {}); // Som não-crítico
       newX = shipPosRef.current.x;
       newY = shipPosRef.current.y;
       allowMovement = false;
