@@ -40,75 +40,84 @@ const wrap = (value: number, min: number, max: number): number => {
   return result;
 };
 
-const GALAXY_POINTS: MapPointData[] = [
-  {
-    id: "terra-nova",
-    x: 40,
-    y: 45,
-    name: "Terra Nova",
-    type: "planet",
-    description: "Um planeta verdejante cheio de vida",
-    image:
-      "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
-  },
-  {
-    id: "estacao-omega",
-    x: 60,
-    y: 35,
-    name: "Estação Omega",
-    type: "station",
-    description: "Centro comercial da galáxia",
-    image: "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
-  },
-  {
-    id: "nebulosa-crimson",
-    x: 30,
-    y: 65,
-    name: "Nebulosa Crimson",
-    type: "nebula",
-    description: "Uma nebulosa misteriosa com energia estranha",
-    image: "https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg",
-  },
-  {
-    id: "campo-asteroides",
-    x: 70,
-    y: 55,
-    name: "Campo de Asteroides",
-    type: "asteroid",
-    description: "Rico em recursos minerais raros",
-    image:
-      "https://images.pexels.com/photos/2159/flight-sky-earth-space-working.jpg",
-  },
-  {
-    id: "mundo-gelado",
-    x: 50,
-    y: 25,
-    name: "Mundo Gelado",
-    type: "planet",
-    description: "Planeta coberto de gelo eterno",
-    image: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg",
-  },
-  // Pontos extras para demonstrar wrap
-  {
-    id: "estacao-borda",
-    x: 95,
-    y: 10,
-    name: "Estação da Borda",
-    type: "station",
-    description: "Estação nos limites do espaço",
-    image: "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
-  },
-  {
-    id: "planeta-limite",
-    x: 5,
-    y: 90,
-    name: "Planeta Limite",
-    type: "planet",
-    description: "Mundo nos confins da galáxia",
-    image:
-      "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
-  },
-];
+// Gera pontos em círculo ao redor do centro com 40px de espaçamento
+const generateCircularPoints = () => {
+  const points = [
+    {
+      id: "terra-nova",
+      name: "Terra Nova",
+      type: "planet" as const,
+      description: "Um planeta verdejante cheio de vida",
+      image:
+        "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
+    },
+    {
+      id: "estacao-omega",
+      name: "Estação Omega",
+      type: "station" as const,
+      description: "Centro comercial da galáxia",
+      image:
+        "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
+    },
+    {
+      id: "nebulosa-crimson",
+      name: "Nebulosa Crimson",
+      type: "nebula" as const,
+      description: "Uma nebulosa misteriosa com energia estranha",
+      image:
+        "https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg",
+    },
+    {
+      id: "campo-asteroides",
+      name: "Campo de Asteroides",
+      type: "asteroid" as const,
+      description: "Rico em recursos minerais raros",
+      image:
+        "https://images.pexels.com/photos/2159/flight-sky-earth-space-working.jpg",
+    },
+    {
+      id: "mundo-gelado",
+      name: "Mundo Gelado",
+      type: "planet" as const,
+      description: "Planeta coberto de gelo eterno",
+      image: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg",
+    },
+    {
+      id: "estacao-borda",
+      name: "Estação da Borda",
+      type: "station" as const,
+      description: "Estação nos limites do espaço",
+      image:
+        "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
+    },
+    {
+      id: "planeta-limite",
+      name: "Planeta Limite",
+      type: "planet" as const,
+      description: "Mundo nos confins da galáxia",
+      image:
+        "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
+    },
+  ];
+
+  const centerX = 50; // Centro do mapa em %
+  const centerY = 50;
+  const radius = 6; // Raio em % para formar um círculo pequeno
+
+  return points.map((point, index) => {
+    const angle = (index / points.length) * 2 * Math.PI;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
+
+    return {
+      ...point,
+      x: Math.max(5, Math.min(95, x)), // Limita entre 5% e 95%
+      y: Math.max(5, Math.min(95, y)),
+    };
+  });
+};
+
+const GALAXY_POINTS: MapPointData[] = generateCircularPoints();
 
 export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const [shipPosition, setShipPosition] = useState(() => {
