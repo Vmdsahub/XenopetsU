@@ -612,7 +612,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const checkBarrierCollision = useCallback(
     (proposedMapX: number, proposedMapY: number) => {
       const canvas = canvasRef.current;
-      if (!canvas) return false;
+      if (!canvas) return { isColliding: false, collisionPoint: null };
 
       const centerVisualX = canvas.width / 2;
       const centerVisualY = canvas.height / 2;
@@ -624,7 +624,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           Math.pow(effectiveShipY - centerVisualY, 2),
       );
 
-      return distanceFromCenter > barrierRadius;
+      if (distanceFromCenter > barrierRadius) {
+        // Calcula ponto de colisão na barreira
+        const angle = Math.atan2(
+          effectiveShipY - centerVisualY,
+          effectiveShipX - centerVisualX,
+        );
+        const collisionX = centerVisualX + Math.cos(angle) * barrierRadius;
+        const collisionY = centerVisualY + Math.sin(angle) * barrierRadius;
+
+        return {
+          isColliding: true,
+          collisionPoint: { x: collisionX, y: collisionY },
+        };
+      }
+
+      return { isColliding: false, collisionPoint: null };
     },
     [],
   );
