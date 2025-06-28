@@ -792,6 +792,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       );
 
       // Verifica colisão com barreira circular usando coordenadas visuais
+      let newX = proposedX;
+      let newY = proposedY;
+
       const canvas = canvasRef.current;
       if (canvas) {
         const centerVisualX = canvas.width / 2;
@@ -813,9 +816,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             Math.pow(effectiveShipY - centerVisualY, 2),
         );
 
-        let newX = proposedX;
-        let newY = proposedY;
-
         if (distanceFromCenter > barrierRadius) {
           const angle = Math.atan2(
             effectiveShipY - centerVisualY,
@@ -835,9 +835,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           setVelocity({ x: 0, y: 0 });
           setIsDecelerating(false);
         }
-      } else {
-        let newX = proposedX;
-        let newY = proposedY;
       }
 
       setShipPosition({ x: newX, y: newY });
