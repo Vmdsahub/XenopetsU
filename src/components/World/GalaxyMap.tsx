@@ -260,7 +260,24 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     }
   }, [isDragging]);
 
-  // Verifica proximidade - simples e direto
+  // Função para calcular distância toroidal correta
+  const getToroidalDistance = (
+    pos1: { x: number; y: number },
+    pos2: { x: number; y: number },
+  ) => {
+    // Calcula diferenças considerando wrap em mundo toroidal
+    const dx1 = Math.abs(pos1.x - pos2.x);
+    const dx2 = WORLD_CONFIG.width - dx1;
+    const minDx = Math.min(dx1, dx2);
+
+    const dy1 = Math.abs(pos1.y - pos2.y);
+    const dy2 = WORLD_CONFIG.height - dy1;
+    const minDy = Math.min(dy1, dy2);
+
+    return Math.sqrt(minDx * minDx + minDy * minDy);
+  };
+
+  // Verifica proximidade com cálculo de distância toroidal correto
   useEffect(() => {
     const interval = setInterval(() => {
       const threshold = 8;
@@ -268,9 +285,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       let closestDistance = Infinity;
 
       GALAXY_POINTS.forEach((point) => {
-        const dx = Math.abs(shipPosRef.current.x - point.x);
-        const dy = Math.abs(shipPosRef.current.y - point.y);
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distance = getToroidalDistance(shipPosRef.current, point);
 
         if (distance < threshold && distance < closestDistance) {
           closest = point.id;
