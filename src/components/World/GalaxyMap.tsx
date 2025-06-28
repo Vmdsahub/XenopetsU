@@ -908,8 +908,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           style={{
             left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
             top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
-            width: "700px",
-            height: "700px",
+            width: "1400px", // Diâmetro de 1400px
+            height: "1400px",
             transform: "translate(-50%, -50%)",
             border: "2px dashed rgba(255, 255, 255, 0.15)",
             borderRadius: "50%",
