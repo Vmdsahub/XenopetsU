@@ -230,7 +230,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Renderização simples das estrelas
+  // Renderização corrigida para escala -5000 a +5000
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -250,26 +250,33 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const parallaxX = currentMapX * speed;
         const parallaxY = currentMapY * speed;
 
-        // Converte coordenadas do mundo (0-200%) para pixels do canvas
-        let x = (star.x / WORLD_CONFIG.width) * canvasWidth + parallaxX;
-        let y = (star.y / WORLD_CONFIG.height) * canvasHeight + parallaxY;
+        // Converte coordenadas do espaço das estrelas (-10000 a +10000) para pixels
+        // Escala: 1 unidade do mapa = 0.05 pixels (ajustável)
+        const scale = 0.05;
+        let x = star.x * scale + canvasWidth / 2 + parallaxX;
+        let y = star.y * scale + canvasHeight / 2 + parallaxY;
 
-        // Sistema simples de wrap toroidal
-        const wrapWidth = canvasWidth * 2;
-        const wrapHeight = canvasHeight * 2;
+        // Wrap toroidal sem criar padrões de grade
+        const wrapSize = 1000; // Tamanho do tile em pixels
 
-        // Renderiza múltiplas cópias para cobrir toda a área
-        for (let dx = -wrapWidth; dx <= wrapWidth; dx += wrapWidth) {
-          for (let dy = -wrapHeight; dy <= wrapHeight; dy += wrapHeight) {
-            const finalX = x + dx;
-            const finalY = y + dy;
+        // Normaliza para o tile base
+        const tileX = Math.floor(x / wrapSize);
+        const tileY = Math.floor(y / wrapSize);
+        const localX = x - tileX * wrapSize;
+        const localY = y - tileY * wrapSize;
 
-            // Culling
+        // Renderiza em uma grade 3x3 ao redor da posição atual
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const finalX = localX + dx * wrapSize;
+            const finalY = localY + dy * wrapSize;
+
+            // Culling otimizado
             if (
-              finalX < -star.size ||
-              finalX > canvasWidth + star.size ||
-              finalY < -star.size ||
-              finalY > canvasHeight + star.size
+              finalX < -star.size * 2 ||
+              finalX > canvasWidth + star.size * 2 ||
+              finalY < -star.size * 2 ||
+              finalY > canvasHeight + star.size * 2
             ) {
               continue;
             }
@@ -284,15 +291,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
                 0,
                 finalX,
                 finalY,
-                star.size * 2,
+                star.size * 2.5,
               );
               gradient.addColorStop(0, star.color);
-              gradient.addColorStop(0.5, star.color + "88");
+              gradient.addColorStop(0.4, star.color + "77");
               gradient.addColorStop(1, star.color + "00");
               ctx.fillStyle = gradient;
 
               ctx.beginPath();
-              ctx.arc(finalX, finalY, star.size * 2, 0, Math.PI * 2);
+              ctx.arc(finalX, finalY, star.size * 2.5, 0, Math.PI * 2);
               ctx.fill();
 
               ctx.fillStyle = star.color;
