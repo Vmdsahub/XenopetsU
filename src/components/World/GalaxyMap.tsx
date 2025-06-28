@@ -597,7 +597,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       </div>
 
       {/* Coordenadas simplificadas na parte inferior */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/30 text-sm font-mono">
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/20 text-xs font-mono font-thin">
         X: {shipPosition.x.toFixed(1)} Y: {shipPosition.y.toFixed(1)}
       </div>
     </div>
