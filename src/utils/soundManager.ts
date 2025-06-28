@@ -409,30 +409,45 @@ class EngineSound {
 
       // Para todos os osciladores após o fade
       setTimeout(() => {
-        this.oscillators.forEach((osc) => {
-          try {
-            osc.stop();
-          } catch (e) {
-            // Ignora erros se já parou
-          }
-        });
-
-        if (this.audioContext) {
-          this.audioContext.close();
-        }
-
-        // Limpa referências
-        this.oscillators = [];
-        this.gainNodes = [];
-        this.masterGain = null;
-        this.audioContext = null;
-        this.isPlaying = false;
-
-        // Reseta o timer de debounce para permitir start imediato após parar
-        this.lastStartTime = 0;
+        this.forceStop();
       }, 150);
     } catch (error) {
       console.warn("Engine sound failed to stop:", error);
+      this.isPlaying = false;
+    }
+  }
+
+  // Método para parada forçada imediata sem fade
+  private forceStop(): void {
+    try {
+      // Cancela qualquer timeout pendente
+      if (this.startDebounceTimeout) {
+        clearTimeout(this.startDebounceTimeout);
+        this.startDebounceTimeout = null;
+      }
+
+      // Para todos os osciladores imediatamente
+      this.oscillators.forEach((osc) => {
+        try {
+          osc.stop();
+        } catch (e) {
+          // Ignora erros se já parou
+        }
+      });
+
+      if (this.audioContext) {
+        this.audioContext.close();
+      }
+
+      // Limpa referências
+      this.oscillators = [];
+      this.gainNodes = [];
+      this.masterGain = null;
+      this.audioContext = null;
+      this.isPlaying = false;
+      this.lastStartTime = 0;
+    } catch (error) {
+      console.warn("Force stop failed:", error);
       this.isPlaying = false;
     }
   }
