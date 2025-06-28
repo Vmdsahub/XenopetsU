@@ -1064,7 +1064,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             }}
             transition={{
               rotate: {
-                duration: 60, // Rotação mais lenta - 1 minuto por volta
+                duration: 600, // Rotação muito mais lenta - 10 minutos por volta
                 repeat: Infinity,
                 ease: "linear",
               },
