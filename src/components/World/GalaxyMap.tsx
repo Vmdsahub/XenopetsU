@@ -467,6 +467,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const rect = container.getBoundingClientRect();
       canvas.width = rect.width;
       canvas.height = rect.height;
+      setCanvasDimensions({ width: rect.width, height: rect.height });
     };
 
     updateCanvasSize();
