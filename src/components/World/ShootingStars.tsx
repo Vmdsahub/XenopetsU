@@ -92,11 +92,11 @@ export const ShootingStars: React.FC<ShootingStarsProps> = ({
     };
   }, [width, height]);
 
-  // Função para calcular próximo tempo de aparição (muito raro)
+  // Função para calcular próximo tempo de aparição (frequência aumentada para teste)
   const calculateNextStarTime = useCallback(() => {
-    // Entre 30 segundos e 3 minutos (30000ms a 180000ms)
-    const minDelay = 30000;
-    const maxDelay = 180000;
+    // Entre 2 segundos e 8 segundos para teste (2000ms a 8000ms)
+    const minDelay = 2000;
+    const maxDelay = 8000;
     return Date.now() + minDelay + Math.random() * (maxDelay - minDelay);
   }, []);
 
