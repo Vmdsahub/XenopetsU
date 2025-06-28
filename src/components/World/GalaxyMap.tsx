@@ -939,15 +939,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           style={{
             left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
             top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
-            width: "1400px", // Diâmetro de 1400px
-            height: "1400px",
+            width: "1000px", // Diâmetro menor para corresponder ao raio de colisão
+            height: "1000px",
             transform: "translate(-50%, -50%)",
             border: "2px dashed rgba(255, 255, 255, 0.15)",
             borderRadius: "50%",
             zIndex: 5,
           }}
         />
-
         {/* Renderiza apenas 3 cópias para melhor performance */}
         <div className="absolute inset-0">{renderPoints()}</div>
         <div
