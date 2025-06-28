@@ -190,41 +190,84 @@ const tryAlternativePlay = (
 };
 
 /**
- * Creates a collision sound using Web Audio API
+ * Creates an improved collision sound using Web Audio API
  */
 const playCollisionSound = (): Promise<void> => {
   return new Promise((resolve) => {
     try {
       const audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      
+      // Create multiple oscillators for a richer collision sound
+      const osc1 = audioContext.createOscillator();
+      const osc2 = audioContext.createOscillator();
+      const osc3 = audioContext.createOscillator();
+      
+      const gain1 = audioContext.createGain();
+      const gain2 = audioContext.createGain();
+      const gain3 = audioContext.createGain();
+      const masterGain = audioContext.createGain();
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      // Connect oscillators
+      osc1.connect(gain1);
+      osc2.connect(gain2);
+      osc3.connect(gain3);
+      
+      gain1.connect(masterGain);
+      gain2.connect(masterGain);
+      gain3.connect(masterGain);
+      masterGain.connect(audioContext.destination);
 
-      // Create a sharp collision sound (harsh, brief)
-      oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(
-        50,
-        audioContext.currentTime + 0.1,
-      );
-      oscillator.type = "sawtooth";
+      // Create a metallic collision sound with harmonics
+      osc1.type = "sawtooth"; // Main impact
+      osc2.type = "square";   // Metallic ring
+      osc3.type = "triangle"; // Harmonic
 
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(
-        0.15,
-        audioContext.currentTime + 0.01,
-      );
-      gainNode.gain.exponentialRampToValueAtTime(
-        0.001,
-        audioContext.currentTime + 0.1,
-      );
+      // Frequency sweep for impact effect
+      const startTime = audioContext.currentTime;
+      
+      // Main impact frequency (low to high sweep)
+      osc1.frequency.setValueAtTime(80, startTime);
+      osc1.frequency.exponentialRampToValueAtTime(300, startTime + 0.05);
+      osc1.frequency.exponentialRampToValueAtTime(40, startTime + 0.2);
+      
+      // Metallic ring (higher frequency)
+      osc2.frequency.setValueAtTime(800, startTime);
+      osc2.frequency.exponentialRampToValueAtTime(400, startTime + 0.15);
+      
+      // Harmonic (mid frequency)
+      osc3.frequency.setValueAtTime(200, startTime);
+      osc3.frequency.exponentialRampToValueAtTime(100, startTime + 0.1);
 
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.1);
+      // Volume envelopes for realistic collision
+      // Main impact - sharp attack, quick decay
+      gain1.gain.setValueAtTime(0, startTime);
+      gain1.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+      gain1.gain.exponentialRampToValueAtTime(0.001, startTime + 0.2);
+      
+      // Metallic ring - delayed, longer sustain
+      gain2.gain.setValueAtTime(0, startTime);
+      gain2.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+      gain2.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+      
+      // Harmonic - medium attack and decay
+      gain3.gain.setValueAtTime(0, startTime);
+      gain3.gain.linearRampToValueAtTime(0.1, startTime + 0.015);
+      gain3.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
 
-      setTimeout(() => resolve(), 120);
+      // Master volume
+      masterGain.gain.setValueAtTime(0.4, startTime);
+
+      // Start and stop oscillators
+      osc1.start(startTime);
+      osc2.start(startTime);
+      osc3.start(startTime);
+      
+      osc1.stop(startTime + 0.25);
+      osc2.stop(startTime + 0.3);
+      osc3.stop(startTime + 0.2);
+
+      setTimeout(() => resolve(), 350);
     } catch (error) {
       console.warn("Web Audio API collision sound failed:", error);
       resolve();

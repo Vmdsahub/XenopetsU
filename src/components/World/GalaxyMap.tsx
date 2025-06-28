@@ -9,6 +9,7 @@ import { motion, useMotionValue, animate } from "framer-motion";
 import { PlayerShip } from "./PlayerShip";
 import { MapPoint } from "./MapPoint";
 import { playBarrierCollisionSound } from "../../utils/soundManager";
+import { useGameStore } from "../../store/gameStore";
 
 interface GalaxyMapProps {
   onPointClick: (pointId: string, pointData: any) => void;
@@ -132,6 +133,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const [sparks, setSparks] = useState<
     Array<{ id: number; x: number; y: number; dx: number; dy: number }>
   >([]);
+  const [collisionNotification, setCollisionNotification] = useState<{
+    show: boolean;
+    id: number;
+  }>({ show: false, id: 0 });
 
   const mapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -155,6 +160,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   // Canvas ref para estrelas
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
+
+  // Game store for notifications
+  const { addNotification } = useGameStore();
 
   // Sistema de estrelas corrigido para escala -5000 a +5000
   const starData = useMemo(() => {
@@ -524,6 +532,70 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     [],
   );
 
+  // Função para repelir o jogador
+  const repelPlayer = useCallback((collisionX: number, collisionY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    // Calcula direção da repulsão (do centro da barreira para fora)
+    const repelDirectionX = collisionX - centerX;
+    const repelDirectionY = collisionY - centerY;
+    const distance = Math.sqrt(repelDirectionX * repelDirectionX + repelDirectionY * repelDirectionY);
+
+    if (distance > 0) {
+      // Normaliza a direção e aplica força de repulsão
+      const normalizedX = repelDirectionX / distance;
+      const normalizedY = repelDirectionY / distance;
+      const repelForce = 15; // Força da repulsão
+
+      // Aplica repulsão ao mapa (movimento inverso)
+      const currentMapX = mapX.get();
+      const currentMapY = mapY.get();
+      
+      animate(mapX, currentMapX - normalizedX * repelForce, { 
+        duration: 0.3, 
+        ease: "easeOut" 
+      });
+      animate(mapY, currentMapY - normalizedY * repelForce, { 
+        duration: 0.3, 
+        ease: "easeOut" 
+      });
+
+      // Atualiza posição da nave correspondentemente
+      const repelShipX = normalizedX * repelForce / 12;
+      const repelShipY = normalizedY * repelForce / 12;
+      
+      setShipPosition(prev => ({
+        x: wrap(prev.x + repelShipX, 0, WORLD_CONFIG.width),
+        y: wrap(prev.y + repelShipY, 0, WORLD_CONFIG.height)
+      }));
+    }
+  }, [mapX, mapY]);
+
+  // Função para mostrar notificação de colisão
+  const showCollisionNotification = useCallback(() => {
+    const notificationId = Date.now();
+    setCollisionNotification({ show: true, id: notificationId });
+
+    // Adiciona notificação ao sistema global
+    addNotification({
+      type: "warning",
+      title: "⚠️ Colisão Detectada!",
+      message: "Ei! A sua Xenoship mal aguenta a força da gravidade, esqueceu que ela é muito frágil pra explorar os cosmos?",
+      isRead: false,
+    });
+
+    // Remove a notificação local após 4 segundos
+    setTimeout(() => {
+      setCollisionNotification(prev => 
+        prev.id === notificationId ? { show: false, id: 0 } : prev
+      );
+    }, 4000);
+  }, [addNotification]);
+
   // Função para verificar colisão com barreira - versão robusta
   const checkBarrierCollision = useCallback(
     (proposedMapX: number, proposedMapY: number) => {
@@ -623,9 +695,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               collision.collisionPoint.x,
               collision.collisionPoint.y,
             );
+            repelPlayer(collision.collisionPoint.x, collision.collisionPoint.y);
           }
           // Reproduz som de colisão
           playBarrierCollisionSound();
+          // Mostra notificação
+          showCollisionNotification();
           setIsDecelerating(false);
           setVelocity({ x: 0, y: 0 });
           return;
@@ -653,7 +728,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         }
       };
     }
-  }, [isDragging, mapX, mapY, checkBarrierCollision, createCollisionSparks]);
+  }, [isDragging, mapX, mapY, checkBarrierCollision, createCollisionSparks, repelPlayer, showCollisionNotification]);
 
   // Função para calcular distância toroidal correta
   const getToroidalDistance = (
@@ -768,9 +843,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           collision.collisionPoint.x,
           collision.collisionPoint.y,
         );
+        repelPlayer(collision.collisionPoint.x, collision.collisionPoint.y);
       }
       // Reproduz som de colisão
       playBarrierCollisionSound();
+      // Mostra notificação
+      showCollisionNotification();
       newX = shipPosRef.current.x;
       newY = shipPosRef.current.y;
       allowMovement = false;
@@ -875,9 +953,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             collision.collisionPoint.x,
             collision.collisionPoint.y,
           );
+          repelPlayer(collision.collisionPoint.x, collision.collisionPoint.y);
         }
         // Reproduz som de colisão
         playBarrierCollisionSound();
+        // Mostra notificação
+        showCollisionNotification();
         newX = shipPosRef.current.x;
         newY = shipPosRef.current.y;
         allowMovement = false;
@@ -946,6 +1027,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipRotation,
     checkBarrierCollision,
     createCollisionSparks,
+    repelPlayer,
+    showCollisionNotification,
   ]);
 
   const resetShipPosition = () => {
@@ -992,6 +1075,29 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
+      {/* Notificação de Colisão */}
+      {collisionNotification.show && (
+        <motion.div
+          className="absolute top-4 left-4 right-4 z-50 bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-2xl shadow-2xl border-2 border-red-300"
+          initial={{ opacity: 0, y: -50, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -50, scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        >
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-lg">⚠️</span>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-lg mb-1">Colisão Detectada!</h4>
+              <p className="text-sm text-white/90 leading-relaxed">
+                Ei! A sua Xenoship mal aguenta a força da gravidade, esqueceu que ela é muito frágil pra explorar os cosmos?
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Canvas para estrelas com parallax otimizado */}
       <canvas
         ref={canvasRef}
