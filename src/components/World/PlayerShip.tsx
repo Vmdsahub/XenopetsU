@@ -20,15 +20,21 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
   useEffect(() => {
     if (isDragging) {
       setShowTrail(true);
+      // Sempre inicia o som quando começa a arrastar
       startEngineSound();
     } else {
+      // Para o som imediatamente quando para de arrastar
+      stopEngineSound();
+      
+      // Mantém o trail por um tempo após parar
       const timeout = setTimeout(() => {
         setShowTrail(false);
       }, 200);
-      stopEngineSound();
+      
       return () => clearTimeout(timeout);
     }
   }, [isDragging]);
+
   return (
     <motion.div
       className={`relative w-10 h-10 z-20 ${isDragging ? "pointer-events-none" : ""}`}

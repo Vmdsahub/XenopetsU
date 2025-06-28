@@ -190,7 +190,7 @@ const tryAlternativePlay = (
 };
 
 /**
- * Creates an improved collision sound using Web Audio API
+ * Creates a clean, crisp collision sound using Web Audio API
  */
 const playCollisionSound = (): Promise<void> => {
   return new Promise((resolve) => {
@@ -198,76 +198,44 @@ const playCollisionSound = (): Promise<void> => {
       const audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
       
-      // Create multiple oscillators for a richer collision sound
-      const osc1 = audioContext.createOscillator();
-      const osc2 = audioContext.createOscillator();
-      const osc3 = audioContext.createOscillator();
-      
-      const gain1 = audioContext.createGain();
-      const gain2 = audioContext.createGain();
-      const gain3 = audioContext.createGain();
-      const masterGain = audioContext.createGain();
+      // Create a simple but effective collision sound
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
 
-      // Connect oscillators
-      osc1.connect(gain1);
-      osc2.connect(gain2);
-      osc3.connect(gain3);
-      
-      gain1.connect(masterGain);
-      gain2.connect(masterGain);
-      gain3.connect(masterGain);
-      masterGain.connect(audioContext.destination);
+      // Connect the audio nodes
+      oscillator.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-      // Create a metallic collision sound with harmonics
-      osc1.type = "sawtooth"; // Main impact
-      osc2.type = "square";   // Metallic ring
-      osc3.type = "triangle"; // Harmonic
+      // Configure the filter for a cleaner sound
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+      filter.Q.setValueAtTime(1, audioContext.currentTime);
 
-      // Frequency sweep for impact effect
-      const startTime = audioContext.currentTime;
-      
-      // Main impact frequency (low to high sweep)
-      osc1.frequency.setValueAtTime(80, startTime);
-      osc1.frequency.exponentialRampToValueAtTime(300, startTime + 0.05);
-      osc1.frequency.exponentialRampToValueAtTime(40, startTime + 0.2);
-      
-      // Metallic ring (higher frequency)
-      osc2.frequency.setValueAtTime(800, startTime);
-      osc2.frequency.exponentialRampToValueAtTime(400, startTime + 0.15);
-      
-      // Harmonic (mid frequency)
-      osc3.frequency.setValueAtTime(200, startTime);
-      osc3.frequency.exponentialRampToValueAtTime(100, startTime + 0.1);
+      // Create a sharp, clean collision sound
+      oscillator.type = "triangle"; // Smoother than sawtooth
+      oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(
+        80,
+        audioContext.currentTime + 0.15,
+      );
 
-      // Volume envelopes for realistic collision
-      // Main impact - sharp attack, quick decay
-      gain1.gain.setValueAtTime(0, startTime);
-      gain1.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
-      gain1.gain.exponentialRampToValueAtTime(0.001, startTime + 0.2);
-      
-      // Metallic ring - delayed, longer sustain
-      gain2.gain.setValueAtTime(0, startTime);
-      gain2.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
-      gain2.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-      
-      // Harmonic - medium attack and decay
-      gain3.gain.setValueAtTime(0, startTime);
-      gain3.gain.linearRampToValueAtTime(0.1, startTime + 0.015);
-      gain3.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
+      // Clean volume envelope
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(
+        0.2,
+        audioContext.currentTime + 0.01,
+      );
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime + 0.15,
+      );
 
-      // Master volume
-      masterGain.gain.setValueAtTime(0.4, startTime);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.15);
 
-      // Start and stop oscillators
-      osc1.start(startTime);
-      osc2.start(startTime);
-      osc3.start(startTime);
-      
-      osc1.stop(startTime + 0.25);
-      osc2.stop(startTime + 0.3);
-      osc3.stop(startTime + 0.2);
-
-      setTimeout(() => resolve(), 350);
+      setTimeout(() => resolve(), 200);
     } catch (error) {
       console.warn("Web Audio API collision sound failed:", error);
       resolve();
@@ -316,22 +284,27 @@ const playNotificationBeep = (): Promise<void> => {
 };
 
 /**
- * Engine sound manager for ship motors
+ * Enhanced Engine sound manager for ship motors
  */
 class EngineSound {
   private audioContext: AudioContext | null = null;
-  private oscillator: OscillatorNode | null = null;
-  private gainNode: GainNode | null = null;
+  private oscillators: OscillatorNode[] = [];
+  private gainNodes: GainNode[] = [];
+  private masterGain: GainNode | null = null;
   private isPlaying = false;
+  private startTime = 0;
 
   start(): void {
+    // Se já está tocando, não inicia novamente
     if (this.isPlaying) return;
 
     try {
       this.audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
 
-      // Create multiple oscillators for richer sound
+      this.startTime = this.audioContext.currentTime;
+
+      // Cria múltiplos osciladores para som mais rico
       const osc1 = this.audioContext.createOscillator();
       const osc2 = this.audioContext.createOscillator();
       const osc3 = this.audioContext.createOscillator();
@@ -341,7 +314,7 @@ class EngineSound {
       const gain3 = this.audioContext.createGain();
       const masterGain = this.audioContext.createGain();
 
-      // Connect oscillators to individual gains, then to master
+      // Conecta osciladores
       osc1.connect(gain1);
       osc2.connect(gain2);
       osc3.connect(gain3);
@@ -351,17 +324,17 @@ class EngineSound {
       gain3.connect(masterGain);
       masterGain.connect(this.audioContext.destination);
 
-      // Futuristic spaceship engine: clean sine waves with harmonics
+      // Configuração para som de nave espacial futurística
       osc1.type = "sine";
       osc2.type = "sine";
       osc3.type = "triangle";
 
-      // Base frequency and harmonics for spaceship hum
-      osc1.frequency.setValueAtTime(120, this.audioContext.currentTime);
-      osc2.frequency.setValueAtTime(240, this.audioContext.currentTime); // octave
-      osc3.frequency.setValueAtTime(180, this.audioContext.currentTime); // fifth
+      // Frequências base e harmônicos
+      osc1.frequency.setValueAtTime(120, this.startTime);
+      osc2.frequency.setValueAtTime(240, this.startTime); // oitava
+      osc3.frequency.setValueAtTime(180, this.startTime); // quinta
 
-      // Subtle modulation for alive engine feeling
+      // Modulação sutil para som vivo
       const lfo = this.audioContext.createOscillator();
       const lfoGain = this.audioContext.createGain();
       lfo.connect(lfoGain);
@@ -369,83 +342,99 @@ class EngineSound {
       lfoGain.connect(osc2.frequency);
 
       lfo.type = "sine";
-      lfo.frequency.setValueAtTime(3, this.audioContext.currentTime);
-      lfoGain.gain.setValueAtTime(8, this.audioContext.currentTime);
+      lfo.frequency.setValueAtTime(3, this.startTime);
+      lfoGain.gain.setValueAtTime(8, this.startTime);
 
-      // Individual oscillator volumes
-      gain1.gain.setValueAtTime(0.04, this.audioContext.currentTime);
-      gain2.gain.setValueAtTime(0.02, this.audioContext.currentTime);
-      gain3.gain.setValueAtTime(0.015, this.audioContext.currentTime);
+      // Volumes individuais
+      gain1.gain.setValueAtTime(0.04, this.startTime);
+      gain2.gain.setValueAtTime(0.02, this.startTime);
+      gain3.gain.setValueAtTime(0.015, this.startTime);
 
-      // Master volume envelope
-      masterGain.gain.setValueAtTime(0, this.audioContext.currentTime);
-      masterGain.gain.linearRampToValueAtTime(
-        1,
-        this.audioContext.currentTime + 0.2,
-      );
+      // Envelope de volume master com fade-in suave
+      masterGain.gain.setValueAtTime(0, this.startTime);
+      masterGain.gain.linearRampToValueAtTime(1, this.startTime + 0.2);
 
-      osc1.start();
-      osc2.start();
-      osc3.start();
-      lfo.start();
+      // Inicia osciladores
+      osc1.start(this.startTime);
+      osc2.start(this.startTime);
+      osc3.start(this.startTime);
+      lfo.start(this.startTime);
 
-      // Store references for cleanup
-      this.oscillator = osc1; // Keep reference for stop method
-      this.gainNode = masterGain;
+      // Armazena referências para cleanup
+      this.oscillators = [osc1, osc2, osc3, lfo];
+      this.gainNodes = [gain1, gain2, gain3, lfoGain];
+      this.masterGain = masterGain;
       this.isPlaying = true;
+
     } catch (error) {
       console.warn("Engine sound failed to start:", error);
+      this.isPlaying = false;
     }
   }
 
   stop(): void {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying || !this.audioContext || !this.masterGain) return;
 
     try {
-      if (this.gainNode && this.audioContext) {
-        // Fade out
-        this.gainNode.gain.linearRampToValueAtTime(
-          0,
-          this.audioContext.currentTime + 0.2,
-        );
+      const stopTime = this.audioContext.currentTime;
+      
+      // Fade out suave
+      this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.2);
 
-        setTimeout(() => {
-          if (this.oscillator) {
-            this.oscillator.stop();
-            this.oscillator = null;
+      // Para todos os osciladores após o fade
+      setTimeout(() => {
+        this.oscillators.forEach(osc => {
+          try {
+            osc.stop();
+          } catch (e) {
+            // Ignora erros se já parou
           }
-          if (this.audioContext) {
-            this.audioContext.close();
-            this.audioContext = null;
-          }
-          this.gainNode = null;
-          this.isPlaying = false;
-        }, 250);
-      }
+        });
+
+        if (this.audioContext) {
+          this.audioContext.close();
+        }
+
+        // Limpa referências
+        this.oscillators = [];
+        this.gainNodes = [];
+        this.masterGain = null;
+        this.audioContext = null;
+        this.isPlaying = false;
+      }, 250);
+
     } catch (error) {
       console.warn("Engine sound failed to stop:", error);
       this.isPlaying = false;
     }
   }
+
+  // Método para verificar se está tocando
+  isCurrentlyPlaying(): boolean {
+    return this.isPlaying;
+  }
 }
 
-// Global engine sound instance
+// Instância global do som do motor
 const engineSound = new EngineSound();
 
-// Convenience functions
+// Funções de conveniência
 export const playNotificationSound = (): Promise<void> => {
-  // Try the Web Audio API notification first (more reliable)
+  // Tenta o Web Audio API primeiro (mais confiável)
   return playNotificationBeep().catch(() => {
-    // Fallback to MP3 file
+    // Fallback para arquivo MP3
     return playSound(Sounds.NOTIFICATION, 0.5).catch((error) => {
       console.warn("Both notification methods failed:", error.message);
-      // Don't throw error for notification sounds - they're non-critical
+      // Não lança erro para sons de notificação - eles não são críticos
     });
   });
 };
 
 export const startEngineSound = (): void => {
-  engineSound.start();
+  // Só inicia se não estiver já tocando
+  if (!engineSound.isCurrentlyPlaying()) {
+    engineSound.start();
+  }
 };
 
 export const stopEngineSound = (): void => {
