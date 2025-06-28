@@ -258,8 +258,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
 
+    const currentTime = Date.now();
+    const deltaTime = currentTime - lastMoveTime.current;
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
+
+    // Calcula velocidade para momentum
+    if (deltaTime > 0) {
+      const velX = deltaX / Math.max(deltaTime / 16, 1); // Normaliza para ~60fps
+      const velY = deltaY / Math.max(deltaTime / 16, 1);
+      setVelocity({ x: velX, y: velY });
+    }
 
     // Atualiza posição da nave
     const newX = wrap(shipPosRef.current.x - deltaX / 8, 0, WORLD_CONFIG.width);
@@ -292,6 +301,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
+    lastMoveTime.current = currentTime;
   };
 
   const handleMouseUp = () => {
