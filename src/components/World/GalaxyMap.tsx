@@ -942,21 +942,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           willChange: "transform", // otimização para GPU
         }}
       >
-        {/* Barreira circular fixa no centro do mapa */}
+        /* Barreira circular fixa no centro do mapa */
         <div
           className="absolute pointer-events-none"
           style={{
             left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
             top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
-            width: "1200px", // Diâmetro 1200px = 600px de raio
-            height: "1200px",
+            width: "2400px", // Diâmetro 2400px = 1200px de raio (2x maior)
+            height: "2400px",
             transform: "translate(-50%, -50%)",
             border: "2px dashed rgba(255, 255, 255, 0.15)",
             borderRadius: "50%",
             zIndex: 5,
           }}
         />
-
         {/* Renderiza apenas 3 cópias para melhor performance */}
         <div className="absolute inset-0">{renderPoints()}</div>
         <div
