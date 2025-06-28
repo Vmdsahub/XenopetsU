@@ -311,7 +311,7 @@ class EngineSound {
   private startDebounceTimeout: NodeJS.Timeout | null = null;
 
   // Constantes para controle de frequência
-  private readonly START_DEBOUNCE_MS = 50; // Debounce mínimo entre starts
+  private readonly START_DEBOUNCE_MS = 10; // Debounce mínimo entre starts
   private readonly MIN_PLAY_DURATION_MS = 100; // Duração mínima antes de parar
 
   start(): void {
