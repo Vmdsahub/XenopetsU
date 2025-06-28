@@ -562,7 +562,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           setIsColliding(true);
           setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
           if (collision.collisionPoint) {
-            createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
+            createCollisionSparks(
+              collision.collisionPoint.x,
+              collision.collisionPoint.y,
+            );
           }
           playBarrierCollisionSound().catch(() => {}); // Som não-crítico
           setIsDecelerating(false);
@@ -631,13 +634,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       if (distanceFromCenter > barrierRadius) {
         // Calcula ponto de colisão na barreira
-        const angle = Math.atan2(effectiveShipY - centerVisualY, effectiveShipX - centerVisualX);
+        const angle = Math.atan2(
+          effectiveShipY - centerVisualY,
+          effectiveShipX - centerVisualX,
+        );
         const collisionX = centerVisualX + Math.cos(angle) * barrierRadius;
         const collisionY = centerVisualY + Math.sin(angle) * barrierRadius;
 
         return {
           isColliding: true,
-          collisionPoint: { x: collisionX, y: collisionY }
+          collisionPoint: { x: collisionX, y: collisionY },
         };
       }
 
@@ -755,7 +761,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       setIsColliding(true);
       setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
       if (collision.collisionPoint) {
-        createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
+        createCollisionSparks(
+          collision.collisionPoint.x,
+          collision.collisionPoint.y,
+        );
       }
       playBarrierCollisionSound().catch(() => {}); // Som não-crítico
       newX = shipPosRef.current.x;
@@ -858,7 +867,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         setIsColliding(true);
         setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
         if (collision.collisionPoint) {
-          createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
+          createCollisionSparks(
+            collision.collisionPoint.x,
+            collision.collisionPoint.y,
+          );
         }
         playBarrierCollisionSound().catch(() => {}); // Som não-crítico
         newX = shipPosRef.current.x;
@@ -1038,7 +1050,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               border: "2px dashed",
               borderColor: isColliding
                 ? "rgba(239, 68, 68, 0.9)"
-                : "rgba(255, 255, 255, 0.15)"
+                : "rgba(255, 255, 255, 0.15)",
             }}
             animate={{
               rotate: 360,
@@ -1047,8 +1059,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               rotate: {
                 duration: 20,
                 repeat: Infinity,
-                ease: "linear"
-              }
+                ease: "linear",
+              },
             }}
           />
 
@@ -1060,32 +1072,26 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               style={{
                 left: spark.x,
                 top: spark.y,
-                boxShadow: "0 0 4px rgba(239, 68, 68, 0.8)"
+                boxShadow: "0 0 4px rgba(239, 68, 68, 0.8)",
               }}
               initial={{
                 x: 0,
                 y: 0,
                 opacity: 1,
-                scale: 1
+                scale: 1,
               }}
               animate={{
                 x: spark.dx,
                 y: spark.dy,
                 opacity: 0,
-                scale: 0.2
+                scale: 0.2,
               }}
               transition={{
                 duration: 0.4,
-                ease: "easeOut"
+                ease: "easeOut",
               }}
             />
           ))}
-        </div>
-                : {
-                    duration: 0,
-                  },
-            }}
-          />
         </div>
         {/* Renderiza apenas uma vez */}
         <div className="absolute inset-0">{renderPoints()}</div>
