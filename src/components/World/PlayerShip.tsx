@@ -20,14 +20,14 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
       style={{ rotate: rotation }}
       animate={{
         scale: isDragging ? 1.1 : 1,
-        // Balanço sutil indicando que está ligada
-        y: [0, -1, 0, 1, 0],
-        rotate: isDragging ? 0 : [0, 1, 0, -1, 0],
+        // Flutuação sutil indicando que está ligada
+        y: isDragging ? 0 : [0, -1.5, 0, 1.5, 0],
+        x: isDragging ? 0 : [0, 0.5, 0, -0.5, 0],
       }}
       transition={{
         scale: { type: "spring", stiffness: 300, damping: 30 },
-        y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-        rotate: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+        y: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+        x: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
       }}
     >
       {/* Spaceship Image */}
