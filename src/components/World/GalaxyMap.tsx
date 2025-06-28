@@ -40,75 +40,84 @@ const wrap = (value: number, min: number, max: number): number => {
   return result;
 };
 
-const GALAXY_POINTS: MapPointData[] = [
-  {
-    id: "terra-nova",
-    x: 40,
-    y: 45,
-    name: "Terra Nova",
-    type: "planet",
-    description: "Um planeta verdejante cheio de vida",
-    image:
-      "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
-  },
-  {
-    id: "estacao-omega",
-    x: 60,
-    y: 35,
-    name: "Estação Omega",
-    type: "station",
-    description: "Centro comercial da galáxia",
-    image: "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
-  },
-  {
-    id: "nebulosa-crimson",
-    x: 30,
-    y: 65,
-    name: "Nebulosa Crimson",
-    type: "nebula",
-    description: "Uma nebulosa misteriosa com energia estranha",
-    image: "https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg",
-  },
-  {
-    id: "campo-asteroides",
-    x: 70,
-    y: 55,
-    name: "Campo de Asteroides",
-    type: "asteroid",
-    description: "Rico em recursos minerais raros",
-    image:
-      "https://images.pexels.com/photos/2159/flight-sky-earth-space-working.jpg",
-  },
-  {
-    id: "mundo-gelado",
-    x: 50,
-    y: 25,
-    name: "Mundo Gelado",
-    type: "planet",
-    description: "Planeta coberto de gelo eterno",
-    image: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg",
-  },
-  // Pontos extras para demonstrar wrap
-  {
-    id: "estacao-borda",
-    x: 95,
-    y: 10,
-    name: "Estação da Borda",
-    type: "station",
-    description: "Estação nos limites do espaço",
-    image: "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
-  },
-  {
-    id: "planeta-limite",
-    x: 5,
-    y: 90,
-    name: "Planeta Limite",
-    type: "planet",
-    description: "Mundo nos confins da galáxia",
-    image:
-      "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
-  },
-];
+// Gera pontos em círculo ao redor do centro com 40px de espaçamento
+const generateCircularPoints = () => {
+  const points = [
+    {
+      id: "terra-nova",
+      name: "Terra Nova",
+      type: "planet" as const,
+      description: "Um planeta verdejante cheio de vida",
+      image:
+        "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
+    },
+    {
+      id: "estacao-omega",
+      name: "Estação Omega",
+      type: "station" as const,
+      description: "Centro comercial da galáxia",
+      image:
+        "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
+    },
+    {
+      id: "nebulosa-crimson",
+      name: "Nebulosa Crimson",
+      type: "nebula" as const,
+      description: "Uma nebulosa misteriosa com energia estranha",
+      image:
+        "https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg",
+    },
+    {
+      id: "campo-asteroides",
+      name: "Campo de Asteroides",
+      type: "asteroid" as const,
+      description: "Rico em recursos minerais raros",
+      image:
+        "https://images.pexels.com/photos/2159/flight-sky-earth-space-working.jpg",
+    },
+    {
+      id: "mundo-gelado",
+      name: "Mundo Gelado",
+      type: "planet" as const,
+      description: "Planeta coberto de gelo eterno",
+      image: "https://images.pexels.com/photos/220201/pexels-photo-220201.jpeg",
+    },
+    {
+      id: "estacao-borda",
+      name: "Estação da Borda",
+      type: "station" as const,
+      description: "Estação nos limites do espaço",
+      image:
+        "https://images.pexels.com/photos/2156/sky-earth-space-working.jpg",
+    },
+    {
+      id: "planeta-limite",
+      name: "Planeta Limite",
+      type: "planet" as const,
+      description: "Mundo nos confins da galáxia",
+      image:
+        "https://images.pexels.com/photos/87651/earth-blue-planet-globe-planet-87651.jpeg",
+    },
+  ];
+
+  const centerX = 50; // Centro do mapa em %
+  const centerY = 50;
+  const radius = 6; // Raio em % para formar um círculo pequeno
+
+  return points.map((point, index) => {
+    const angle = (index / points.length) * 2 * Math.PI;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
+
+    return {
+      ...point,
+      x: Math.max(5, Math.min(95, x)), // Limita entre 5% e 95%
+      y: Math.max(5, Math.min(95, y)),
+    };
+  });
+};
+
+const GALAXY_POINTS: MapPointData[] = generateCircularPoints();
 
 export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const [shipPosition, setShipPosition] = useState(() => {
@@ -142,7 +151,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas otimizado com arrays tipados - comportamento original
+  // Sistema de estrelas corrigido para escala -5000 a +5000
   const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -153,67 +162,70 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    // Função para criar estrela com seed determinística - original
     const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
-      // Use seed para gerar posições consistentes
-      const rng = (s: number) => {
-        let x = Math.sin(s) * 10000;
-        return x - Math.floor(x);
+      // Função hash simples e efetiva
+      const hash = (n: number) => {
+        let h = n * 2654435761;
+        h = h ^ (h >> 16);
+        h = h * 2654435761;
+        h = h ^ (h >> 16);
+        return (h >>> 0) / 4294967296;
       };
 
       const baseConfig = {
         bg: {
-          count: 1000, // Aumentado para o mapa maior
-          sizeMin: 0.5,
-          sizeMax: 1.0,
+          sizeMin: 0.3,
+          sizeMax: 0.8,
           opacityMin: 0.1,
-          opacityMax: 0.3,
+          opacityMax: 0.4,
           speed: 0.08,
         },
         mid: {
-          count: 500,
-          sizeMin: 0.8,
-          sizeMax: 1.5,
+          sizeMin: 0.6,
+          sizeMax: 1.2,
           opacityMin: 0.2,
-          opacityMax: 0.5,
+          opacityMax: 0.6,
           speed: 0.25,
         },
         fg: {
-          count: 200,
-          sizeMin: 1.2,
-          sizeMax: 2.2,
+          sizeMin: 1.0,
+          sizeMax: 2.0,
           opacityMin: 0.4,
-          opacityMax: 0.8,
+          opacityMax: 0.9,
           speed: 0.5,
         },
       }[layerType];
 
+      // Escala real do mapa: -5000 a +5000 = 10000 unidades
+      // Expandimos para 20000 unidades para ter estrelas suficientes
+      const MAP_SCALE = 20000;
+
       return {
-        x: rng(seed * 1.1) * WORLD_CONFIG.width,
-        y: rng(seed * 1.3) * WORLD_CONFIG.height,
+        x: (hash(seed * 11) - 0.5) * MAP_SCALE,
+        y: (hash(seed * 13) - 0.5) * MAP_SCALE,
         size:
           baseConfig.sizeMin +
-          rng(seed * 1.7) * (baseConfig.sizeMax - baseConfig.sizeMin),
+          hash(seed * 17) * (baseConfig.sizeMax - baseConfig.sizeMin),
         opacity:
           baseConfig.opacityMin +
-          rng(seed * 1.9) * (baseConfig.opacityMax - baseConfig.opacityMin),
+          hash(seed * 19) * (baseConfig.opacityMax - baseConfig.opacityMin),
         color:
-          layerType === "fg" && rng(seed * 2.1) > 0.6
-            ? colors[Math.floor(rng(seed * 2.3) * colors.length)]
+          layerType === "fg" && hash(seed * 23) > 0.7
+            ? colors[Math.floor(hash(seed * 29) * colors.length)]
             : "#ffffff",
         speed: baseConfig.speed,
-        isColorful: layerType === "fg" && rng(seed * 2.1) > 0.6,
+        isColorful: layerType === "fg" && hash(seed * 23) > 0.7,
       };
     };
 
     return {
-      background: Array.from({ length: 1000 }, (_, i) =>
+      background: Array.from({ length: 1500 }, (_, i) =>
         createStar(i + 1000, "bg"),
       ),
-      middle: Array.from({ length: 500 }, (_, i) =>
+      middle: Array.from({ length: 800 }, (_, i) =>
         createStar(i + 2000, "mid"),
       ),
-      foreground: Array.from({ length: 200 }, (_, i) =>
+      foreground: Array.from({ length: 300 }, (_, i) =>
         createStar(i + 3000, "fg"),
       ),
     };
@@ -227,7 +239,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Função de renderização Canvas otimizada - comportamento original
+  // Geração dinâmica de estrelas baseada na posição da câmera
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -235,7 +247,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Limpa canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const canvasWidth = canvas.width;
@@ -243,84 +254,136 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
-    // Função para renderizar camada de estrelas - comportamento original
-    const renderLayer = (stars: typeof starData.background, speed: number) => {
-      stars.forEach((star) => {
-        // Calcula posição com parallax
-        const parallaxX = currentMapX * speed;
-        const parallaxY = currentMapY * speed;
+    const colors = [
+      "#60A5FA",
+      "#F87171",
+      "#34D399",
+      "#FBBF24",
+      "#A78BFA",
+      "#FB7185",
+    ];
 
-        // Converte coordenadas do mundo para canvas
-        const worldToCanvasScale = canvasWidth / (WORLD_CONFIG.width * 3); // 300% width
-        let x = (star.x / WORLD_CONFIG.width) * canvasWidth + parallaxX;
-        let y = (star.y / WORLD_CONFIG.height) * canvasHeight + parallaxY;
-
-        // Renderiza múltiplas cópias para efeito wrap seamless
-        for (
-          let offsetX = -canvasWidth;
-          offsetX <= canvasWidth;
-          offsetX += canvasWidth
-        ) {
-          for (
-            let offsetY = -canvasHeight;
-            offsetY <= canvasHeight;
-            offsetY += canvasHeight
-          ) {
-            const finalX = x + offsetX;
-            const finalY = y + offsetY;
-
-            // Culling - só renderiza se estiver visível
-            if (
-              finalX < -star.size ||
-              finalX > canvasWidth + star.size ||
-              finalY < -star.size ||
-              finalY > canvasHeight + star.size
-            ) {
-              continue;
-            }
-
-            // Renderiza estrela
-            ctx.globalAlpha = star.opacity;
-            ctx.fillStyle = star.color;
-
-            if (star.isColorful) {
-              // Estrelas coloridas com glow
-              const gradient = ctx.createRadialGradient(
-                finalX,
-                finalY,
-                0,
-                finalX,
-                finalY,
-                star.size * 2,
-              );
-              gradient.addColorStop(0, star.color);
-              gradient.addColorStop(0.5, star.color + "88");
-              gradient.addColorStop(1, star.color + "00");
-              ctx.fillStyle = gradient;
-
-              ctx.beginPath();
-              ctx.arc(finalX, finalY, star.size * 2, 0, Math.PI * 2);
-              ctx.fill();
-
-              // Centro mais brilhante
-              ctx.fillStyle = star.color;
-            }
-
-            ctx.beginPath();
-            ctx.arc(finalX, finalY, star.size, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      });
+    // Função hash robusta
+    const hash = (x: number, y: number, layer: number) => {
+      let h = 1779033703 ^ layer;
+      h = Math.imul(h ^ Math.floor(x), 3432918353);
+      h = (h << 13) | (h >>> 19);
+      h = Math.imul(h ^ Math.floor(y), 461845907);
+      h = (h << 13) | (h >>> 19);
+      return (h >>> 0) / 4294967296;
     };
 
-    // Renderiza todas as camadas
-    renderLayer(starData.background, starData.background[0]?.speed || 0.08);
-    renderLayer(starData.middle, starData.middle[0]?.speed || 0.25);
-    renderLayer(starData.foreground, starData.foreground[0]?.speed || 0.5);
+    // Gera estrelas dinamicamente baseado na região visível
+    const generateLayer = (density: number, speed: number, layer: number) => {
+      // Calcula posição da câmera com parallax
+      const cameraX = -currentMapX * speed;
+      const cameraY = -currentMapY * speed;
+
+      // Área visível expandida
+      const margin = 200;
+      const startX = Math.floor((cameraX - margin) / 50) * 50;
+      const endX = Math.ceil((cameraX + canvasWidth + margin) / 50) * 50;
+      const startY = Math.floor((cameraY - margin) / 50) * 50;
+      const endY = Math.ceil((cameraY + canvasHeight + margin) / 50) * 50;
+
+      // Gera estrelas em grades não-uniformes
+      for (let gx = startX; gx < endX; gx += 50) {
+        for (let gy = startY; gy < endY; gy += 50) {
+          const cellHash = hash(gx, gy, layer);
+
+          // Número de estrelas nesta célula (0-density)
+          const numStars = Math.floor(cellHash * density);
+
+          for (let i = 0; i < numStars; i++) {
+            const starHash = hash(gx + i * 137, gy + i * 241, layer + i);
+            const starHash2 = hash(
+              gx + i * 173,
+              gy + i * 197,
+              layer + i + 1000,
+            );
+
+            // Posição dentro da célula (completamente aleatória)
+            const localX = starHash * 50;
+            const localY = starHash2 * 50;
+
+            const worldX = gx + localX;
+            const worldY = gy + localY;
+
+            // Converte para coordenadas do canvas
+            const screenX = worldX - cameraX;
+            const screenY = worldY - cameraY;
+
+            // Só renderiza se visível
+            if (
+              screenX >= -10 &&
+              screenX <= canvasWidth + 10 &&
+              screenY >= -10 &&
+              screenY <= canvasHeight + 10
+            ) {
+              // Propriedades da estrela
+              const sizeHash = hash(worldX * 1.1, worldY * 1.3, layer);
+              const opacityHash = hash(worldX * 1.7, worldY * 1.9, layer);
+              const colorHash = hash(worldX * 2.1, worldY * 2.3, layer);
+
+              const size =
+                layer === 1
+                  ? 0.3 + sizeHash * 0.5
+                  : layer === 2
+                    ? 0.6 + sizeHash * 0.6
+                    : 1.0 + sizeHash * 1.0;
+
+              const opacity =
+                layer === 1
+                  ? 0.1 + opacityHash * 0.3
+                  : layer === 2
+                    ? 0.2 + opacityHash * 0.4
+                    : 0.4 + opacityHash * 0.5;
+
+              const isColorful = layer === 3 && colorHash > 0.8;
+              const color = isColorful
+                ? colors[Math.floor(colorHash * colors.length)]
+                : "#ffffff";
+
+              ctx.globalAlpha = opacity;
+              ctx.fillStyle = color;
+
+              if (isColorful) {
+                const gradient = ctx.createRadialGradient(
+                  screenX,
+                  screenY,
+                  0,
+                  screenX,
+                  screenY,
+                  size * 2.5,
+                );
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(0.4, color + "77");
+                gradient.addColorStop(1, color + "00");
+                ctx.fillStyle = gradient;
+
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, size * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = color;
+              }
+
+              ctx.beginPath();
+              ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+      }
+    };
+
+    // Renderiza camadas
+    generateLayer(8, 0.08, 1); // Background
+    generateLayer(4, 0.25, 2); // Middle
+    generateLayer(2, 0.5, 3); // Foreground
 
     ctx.globalAlpha = 1;
-  }, [starData, mapX, mapY]);
+  }, [mapX, mapY]);
 
   // Sistema de animação otimizado para Canvas
   useEffect(() => {
@@ -426,17 +489,50 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const deltaX = newVelX * 1.5; // Movimento mapa reduzido
         const deltaY = newVelY * 1.5;
 
-        // Atualiza posição da nave suavemente
-        const newX = wrap(
+        // Calcula nova posição proposta para momentum
+        const proposedX = wrap(
           shipPosRef.current.x - deltaX / 20, // Divisão maior para movimento mais suave
           0,
           WORLD_CONFIG.width,
         );
-        const newY = wrap(
+        const proposedY = wrap(
           shipPosRef.current.y - deltaY / 20,
           0,
           WORLD_CONFIG.height,
         );
+
+        // Verifica colisão com barreira circular no momentum usando coordenadas visuais
+        let newX = proposedX;
+        let newY = proposedY;
+
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const centerVisualX = canvas.width / 2;
+          const centerVisualY = canvas.height / 2;
+
+          const currentMapX = mapX.get();
+          const currentMapY = mapY.get();
+          const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+          const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+          const proposedMapX = currentMapX + deltaMapX;
+          const proposedMapY = currentMapY + deltaMapY;
+
+          const effectiveShipX = centerVisualX - proposedMapX;
+          const effectiveShipY = centerVisualY - proposedMapY;
+
+          const barrierRadius = 600;
+          const distanceFromCenter = Math.sqrt(
+            Math.pow(effectiveShipX - centerVisualX, 2) +
+              Math.pow(effectiveShipY - centerVisualY, 2),
+          );
+
+          if (distanceFromCenter > barrierRadius) {
+            // Para o momentum completamente e mantém posição atual
+            setIsDecelerating(false);
+            setVelocity({ x: 0, y: 0 });
+            return;
+          }
+        }
 
         setShipPosition({ x: newX, y: newY });
 
@@ -540,17 +636,57 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       setVelocity({ x: velX, y: velY });
     }
 
-    // Atualiza posição da nave de forma mais suave
-    const newX = wrap(
+    // Calcula nova posição proposta
+    const proposedX = wrap(
       shipPosRef.current.x - deltaX / 12,
       0,
       WORLD_CONFIG.width,
     );
-    const newY = wrap(
+    const proposedY = wrap(
       shipPosRef.current.y - deltaY / 12,
       0,
       WORLD_CONFIG.height,
     );
+
+    // Verifica colisão com barreira circular usando coordenadas visuais
+    let newX = proposedX;
+    let newY = proposedY;
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      // Converte posição da nave para coordenadas visuais
+      const centerVisualX = canvas.width / 2;
+      const centerVisualY = canvas.height / 2;
+
+      // Calcula posição visual proposta baseada no movimento do mapa
+      const currentMapX = mapX.get();
+      const currentMapY = mapY.get();
+      const deltaMapX = (shipPosRef.current.x - proposedX) * 12; // Inverte o cálculo do movimento
+      const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+      const proposedMapX = currentMapX + deltaMapX;
+      const proposedMapY = currentMapY + deltaMapY;
+
+      // A posição efetiva da nave em relação ao centro é o inverso do movimento do mapa
+      const effectiveShipX = centerVisualX - proposedMapX;
+      const effectiveShipY = centerVisualY - proposedMapY;
+
+      const barrierRadius = 600; // 1200px de diâmetro = 600px de raio (2x maior)
+      const distanceFromCenter = Math.sqrt(
+        Math.pow(effectiveShipX - centerVisualX, 2) +
+          Math.pow(effectiveShipY - centerVisualY, 2),
+      );
+
+      // Se ultrapassar a barreira, bloqueia completamente
+      if (distanceFromCenter > barrierRadius) {
+        // Não permite o movimento - mantém posição atual
+        newX = shipPosRef.current.x;
+        newY = shipPosRef.current.y;
+
+        // Para todo movimento
+        setVelocity({ x: 0, y: 0 });
+        setIsDecelerating(false);
+      }
+    }
 
     setShipPosition({ x: newX, y: newY });
 
@@ -612,16 +748,52 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         setVelocity({ x: velX, y: velY });
       }
 
-      const newX = wrap(
+      // Calcula nova posição proposta
+      const proposedX = wrap(
         shipPosRef.current.x - deltaX / 12,
         0,
         WORLD_CONFIG.width,
       );
-      const newY = wrap(
+      const proposedY = wrap(
         shipPosRef.current.y - deltaY / 12,
         0,
         WORLD_CONFIG.height,
       );
+
+      // Verifica colisão com barreira circular usando coordenadas visuais
+      let newX = proposedX;
+      let newY = proposedY;
+
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const centerVisualX = canvas.width / 2;
+        const centerVisualY = canvas.height / 2;
+
+        const currentMapX = mapX.get();
+        const currentMapY = mapY.get();
+        const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+        const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+        const proposedMapX = currentMapX + deltaMapX;
+        const proposedMapY = currentMapY + deltaMapY;
+
+        const effectiveShipX = centerVisualX - proposedMapX;
+        const effectiveShipY = centerVisualY - proposedMapY;
+
+        const barrierRadius = 600;
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(effectiveShipX - centerVisualX, 2) +
+            Math.pow(effectiveShipY - centerVisualY, 2),
+        );
+
+        if (distanceFromCenter > barrierRadius) {
+          // Não permite o movimento - mantém posição atual
+          newX = shipPosRef.current.x;
+          newY = shipPosRef.current.y;
+
+          setVelocity({ x: 0, y: 0 });
+          setIsDecelerating(false);
+        }
+      }
 
       setShipPosition({ x: newX, y: newY });
 
@@ -770,6 +942,21 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           willChange: "transform", // otimização para GPU
         }}
       >
+        {/* Barreira circular fixa no centro do mapa */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
+            top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
+            width: "1200px", // Diâmetro 1200px = 600px de raio
+            height: "1200px",
+            transform: "translate(-50%, -50%)",
+            border: "2px dashed rgba(255, 255, 255, 0.15)",
+            borderRadius: "50%",
+            zIndex: 5,
+          }}
+        />
+
         {/* Renderiza apenas 3 cópias para melhor performance */}
         <div className="absolute inset-0">{renderPoints()}</div>
         <div
