@@ -506,6 +506,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           rotation={shipRotation}
           isNearPoint={nearbyPoint !== null}
           isDragging={isDragging}
+          isDecelerating={isDecelerating}
         />
       </div>
 
