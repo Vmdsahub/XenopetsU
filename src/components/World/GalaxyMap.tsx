@@ -331,15 +331,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
 
-    // Momentum equilibrado - proporcional mas limitado
-    const movementMagnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    if (movementMagnitude > 1) {
-      // Threshold menor para permitir momentum
-      const velX = Math.max(-1, Math.min(1, deltaX * 0.05)); // Limita velocidade máxima
-      const velY = Math.max(-1, Math.min(1, deltaY * 0.05));
+    // Momentum simples baseado no último movimento
+    if (deltaTime > 0) {
+      const velX = Math.max(-2, Math.min(2, deltaX * 0.1));
+      const velY = Math.max(-2, Math.min(2, deltaY * 0.1));
       setVelocity({ x: velX, y: velY });
-    } else {
-      setVelocity({ x: 0, y: 0 });
     }
 
     // Atualiza posição da nave
@@ -403,15 +399,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const deltaX = e.clientX - lastMousePos.current.x;
       const deltaY = e.clientY - lastMousePos.current.y;
 
-      // Momentum equilibrado - proporcional mas limitado
-      const movementMagnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      if (movementMagnitude > 1) {
-        // Threshold menor para permitir momentum
-        const velX = Math.max(-1, Math.min(1, deltaX * 0.05)); // Limita velocidade máxima
-        const velY = Math.max(-1, Math.min(1, deltaY * 0.05));
+      // Momentum simples baseado no último movimento
+      if (deltaTime > 0) {
+        const velX = Math.max(-2, Math.min(2, deltaX * 0.1));
+        const velY = Math.max(-2, Math.min(2, deltaY * 0.1));
         setVelocity({ x: velX, y: velY });
-      } else {
-        setVelocity({ x: 0, y: 0 });
       }
 
       const newX = wrap(
