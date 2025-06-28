@@ -640,9 +640,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     );
 
     // Verifica colisão com barreira circular
-    const centerX = WORLD_CONFIG.width / 2; // 100%
-    const centerY = WORLD_CONFIG.height / 2; // 100%
-    const barrierRadius = 70; // Raio em % (1400px de diâmetro = 700px de raio = ~70%)
+    const centerX = WORLD_CONFIG.width / 2; // 100% (centro do mundo)
+    const centerY = WORLD_CONFIG.height / 2; // 100% (centro do mundo)
+    const barrierRadius = 35; // Raio em unidades do mundo (35% de 200% = 70 unidades de raio)
 
     const distanceFromCenter = Math.sqrt(
       Math.pow(proposedX - centerX, 2) + Math.pow(proposedY - centerY, 2),
@@ -651,11 +651,27 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     let newX = proposedX;
     let newY = proposedY;
 
+    // Debug: log para ver os valores
+    console.log(
+      "Ship pos:",
+      proposedX,
+      proposedY,
+      "Center:",
+      centerX,
+      centerY,
+      "Distance:",
+      distanceFromCenter,
+      "Radius:",
+      barrierRadius,
+    );
+
     // Se a nova posição ultrapassar a barreira, limita na borda
     if (distanceFromCenter > barrierRadius) {
       const angle = Math.atan2(proposedY - centerY, proposedX - centerX);
       newX = centerX + Math.cos(angle) * barrierRadius;
       newY = centerY + Math.sin(angle) * barrierRadius;
+
+      console.log("Collision! New pos:", newX, newY);
 
       // Para o momentum se bater na barreira
       setVelocity({ x: 0, y: 0 });
