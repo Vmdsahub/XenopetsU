@@ -991,7 +991,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           willChange: "transform", // otimização para GPU
         }}
       >
-        /* Barreira circular fixa no centro do mapa */
+        {/* Barreira circular fixa no centro do mapa */}
         <div
           className="absolute pointer-events-none"
           style={{
