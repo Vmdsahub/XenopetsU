@@ -545,33 +545,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         let newX = proposedX;
         let newY = proposedY;
 
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const centerVisualX = canvas.width / 2;
-          const centerVisualY = canvas.height / 2;
+        const currentMapX = mapX.get();
+        const currentMapY = mapY.get();
+        const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+        const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+        const proposedMapX = currentMapX + deltaMapX;
+        const proposedMapY = currentMapY + deltaMapY;
 
-          const currentMapX = mapX.get();
-          const currentMapY = mapY.get();
-          const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
-          const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
-          const proposedMapX = currentMapX + deltaMapX;
-          const proposedMapY = currentMapY + deltaMapY;
-
-          const effectiveShipX = centerVisualX - proposedMapX;
-          const effectiveShipY = centerVisualY - proposedMapY;
-
-          const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio
-          const distanceFromCenter = Math.sqrt(
-            Math.pow(effectiveShipX - centerVisualX, 2) +
-              Math.pow(effectiveShipY - centerVisualY, 2),
-          );
-
-          if (distanceFromCenter > barrierRadius) {
-            // Para o momentum completamente e mantém posição atual
-            setIsDecelerating(false);
-            setVelocity({ x: 0, y: 0 });
-            return;
-          }
+        if (checkBarrierCollision(proposedMapX, proposedMapY)) {
+          // Ativa flash vermelho e para o momentum
+          setIsColliding(true);
+          setTimeout(() => setIsColliding(false), 150);
+          setIsDecelerating(false);
+          setVelocity({ x: 0, y: 0 });
+          return;
         }
 
         setShipPosition({ x: newX, y: newY });
