@@ -596,16 +596,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         />
       </div>
 
-      {/* Indicador de status */}
-      <motion.div
-        className="absolute top-4 left-4 px-3 py-1 rounded-lg text-xs backdrop-blur-sm border bg-black/70 text-cyan-300 border-cyan-400/40"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        🌌 Mundo Toroidal
-      </motion.div>
-
       {/* Painel de coordenadas detalhado */}
       <motion.div
         className="absolute top-12 left-4 px-3 py-2 rounded-lg text-xs backdrop-blur-sm border bg-black/80 text-gray-300 border-gray-400/40 min-w-[200px]"
