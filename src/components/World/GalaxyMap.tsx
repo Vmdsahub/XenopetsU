@@ -532,24 +532,19 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const centerVisualX = canvas.width / 2;
       const centerVisualY = canvas.height / 2;
 
-      // A posição efetiva da nave é sempre no centro visual menos o offset do mapa
-      const effectiveShipX = centerVisualX - proposedMapX;
-      const effectiveShipY = centerVisualY - proposedMapY;
-
+      // A nave está sempre no centro da tela, então a distância é simplesmente
+      // a distância do movimento do mapa em relação ao centro da barreira
       const barrierRadius = 1200;
 
-      // Calcula distância do centro da tela (onde a nave está) ao centro da barreira
+      // A barreira está no centro do mundo (mapX=0, mapY=0)
+      // Quando o mapa se move, a nave se afasta do centro da barreira
       const distanceFromCenter = Math.sqrt(
-        Math.pow(effectiveShipX - centerVisualX, 2) +
-          Math.pow(effectiveShipY - centerVisualY, 2),
+        proposedMapX * proposedMapX + proposedMapY * proposedMapY,
       );
 
       if (distanceFromCenter > barrierRadius) {
         // Calcula ponto de colisão na barreira
-        const angle = Math.atan2(
-          effectiveShipY - centerVisualY,
-          effectiveShipX - centerVisualX,
-        );
+        const angle = Math.atan2(proposedMapY, proposedMapX);
         const collisionX = centerVisualX + Math.cos(angle) * barrierRadius;
         const collisionY = centerVisualY + Math.sin(angle) * barrierRadius;
 
