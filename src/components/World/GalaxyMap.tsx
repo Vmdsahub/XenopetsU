@@ -142,7 +142,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas ajustado para escala -5000 a +5000
+  // Sistema de estrelas completamente novo - sem grades
   const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -153,92 +153,71 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    // Parâmetros do mapa real: -5000 a +5000 (10000 units total)
-    const MAP_SIZE = 10000; // -5000 a +5000
-    const MAP_CENTER = 0;
+    // Gerador pseudo-aleatório robusto usando múltiplas funções prime
+    const prng = (seed: number, offset: number = 0) => {
+      const a = 1664525;
+      const c = 1013904223;
+      const m = Math.pow(2, 32);
+      return ((a * (seed + offset) + c) % m) / m;
+    };
 
-    // Função de hash melhorada para distribuição uniforme
-    const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
-      // Múltiplas funções hash diferentes para evitar padrões
-      const hash1 = (s: number) => {
-        let x = Math.sin(s * 12.9898 + 71.233) * 43758.5453;
-        return x - Math.floor(x);
-      };
-
-      const hash2 = (s: number) => {
-        let x = Math.sin(s * 78.233 + 37.543) * 19782.654;
-        return x - Math.floor(x);
-      };
-
-      const hash3 = (s: number) => {
-        let x = Math.sin(s * 53.542 + 91.123) * 87432.123;
-        return x - Math.floor(x);
-      };
-
-      const hash4 = (s: number) => {
-        let x = Math.sin(s * 97.321 + 13.987) * 65432.987;
-        return x - Math.floor(x);
-      };
+    const createStar = (index: number, layerType: "bg" | "mid" | "fg") => {
+      // Seeds únicos para cada propriedade para evitar correlação
+      const seedBase = index * 73856093; // Número primo grande
 
       const baseConfig = {
         bg: {
-          count: 2000, // Aumentado para cobrir a área maior
-          sizeMin: 0.3,
-          sizeMax: 0.7,
+          sizeMin: 0.2,
+          sizeMax: 0.6,
           opacityMin: 0.1,
-          opacityMax: 0.4,
+          opacityMax: 0.3,
           speed: 0.08,
         },
         mid: {
-          count: 1000,
-          sizeMin: 0.6,
-          sizeMax: 1.1,
+          sizeMin: 0.5,
+          sizeMax: 1.0,
           opacityMin: 0.2,
-          opacityMax: 0.6,
+          opacityMax: 0.5,
           speed: 0.25,
         },
         fg: {
-          count: 400,
-          sizeMin: 0.9,
-          sizeMax: 1.8,
-          opacityMin: 0.4,
-          opacityMax: 0.9,
+          sizeMin: 0.8,
+          sizeMax: 1.6,
+          opacityMin: 0.3,
+          opacityMax: 0.8,
           speed: 0.5,
         },
       }[layerType];
 
-      // Distribuição nas coordenadas reais do mapa (-5000 a +5000)
-      // Expande a área para cobrir bem além dos limites visuais
-      const expandedSize = MAP_SIZE * 3; // Triplicamos para ter estrelas suficientes
+      // Distribuição em um espaço muito grande para garantir cobertura total
+      const space = 20000; // Espaço -10000 a +10000 em cada direção
 
       return {
-        x: (hash1(seed * 1.1234) - 0.5) * expandedSize,
-        y: (hash2(seed * 2.3456) - 0.5) * expandedSize,
+        x: (prng(seedBase, 19937) - 0.5) * space,
+        y: (prng(seedBase, 180623) - 0.5) * space,
         size:
           baseConfig.sizeMin +
-          hash3(seed * 3.4567) * (baseConfig.sizeMax - baseConfig.sizeMin),
+          prng(seedBase, 982451653) * (baseConfig.sizeMax - baseConfig.sizeMin),
         opacity:
           baseConfig.opacityMin +
-          hash4(seed * 4.5678) *
+          prng(seedBase, 433494437) *
             (baseConfig.opacityMax - baseConfig.opacityMin),
         color:
-          layerType === "fg" && hash1(seed * 5.6789) > 0.75
-            ? colors[Math.floor(hash2(seed * 6.789) * colors.length)]
+          layerType === "fg" && prng(seedBase, 961748927) > 0.8
+            ? colors[Math.floor(prng(seedBase, 179424673) * colors.length)]
             : "#ffffff",
         speed: baseConfig.speed,
-        isColorful: layerType === "fg" && hash1(seed * 5.6789) > 0.75,
+        isColorful: layerType === "fg" && prng(seedBase, 961748927) > 0.8,
       };
     };
 
     return {
-      background: Array.from({ length: 2000 }, (_, i) =>
-        createStar(i * 17 + 1000, "bg"),
+      background: Array.from({ length: 3000 }, (_, i) => createStar(i, "bg")),
+      middle: Array.from({ length: 1500 }, (_, i) =>
+        createStar(i + 5000, "mid"),
       ),
-      middle: Array.from({ length: 1000 }, (_, i) =>
-        createStar(i * 23 + 2000, "mid"),
-      ),
-      foreground: Array.from({ length: 400 }, (_, i) =>
-        createStar(i * 31 + 3000, "fg"),
+      foreground: Array.from({ length: 600 }, (_, i) =>
+        createStar(i + 10000, "fg"),
       ),
     };
   }, []);
