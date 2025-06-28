@@ -331,15 +331,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
 
-    // Momentum proporcional ao movimento real
+    // Momentum equilibrado - proporcional mas limitado
     const movementMagnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    if (movementMagnitude > 2) {
-      // Só aplica momentum se o movimento for significativo
-      const velX = (deltaX / 8) * 0.3; // Muito reduzido
-      const velY = (deltaY / 8) * 0.3;
+    if (movementMagnitude > 1) {
+      // Threshold menor para permitir momentum
+      const velX = Math.max(-1, Math.min(1, deltaX * 0.05)); // Limita velocidade máxima
+      const velY = Math.max(-1, Math.min(1, deltaY * 0.05));
       setVelocity({ x: velX, y: velY });
     } else {
-      setVelocity({ x: 0, y: 0 }); // Sem momentum para movimentos pequenos
+      setVelocity({ x: 0, y: 0 });
     }
 
     // Atualiza posição da nave
@@ -403,15 +403,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const deltaX = e.clientX - lastMousePos.current.x;
       const deltaY = e.clientY - lastMousePos.current.y;
 
-      // Momentum proporcional ao movimento real
+      // Momentum equilibrado - proporcional mas limitado
       const movementMagnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      if (movementMagnitude > 2) {
-        // Só aplica momentum se o movimento for significativo
-        const velX = (deltaX / 8) * 0.3; // Muito reduzido
-        const velY = (deltaY / 8) * 0.3;
+      if (movementMagnitude > 1) {
+        // Threshold menor para permitir momentum
+        const velX = Math.max(-1, Math.min(1, deltaX * 0.05)); // Limita velocidade máxima
+        const velY = Math.max(-1, Math.min(1, deltaY * 0.05));
         setVelocity({ x: velX, y: velY });
       } else {
-        setVelocity({ x: 0, y: 0 }); // Sem momentum para movimentos pequenos
+        setVelocity({ x: 0, y: 0 });
       }
 
       const newX = wrap(
