@@ -16,28 +16,25 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
 }) => {
   return (
     <motion.div
-      className={`relative w-9 h-9 z-20 ${isDragging ? "pointer-events-none" : ""}`}
+      className={`relative w-10 h-10 z-20 ${isDragging ? "pointer-events-none" : ""}`}
       style={{ rotate: rotation }}
       animate={{
         scale: isDragging ? 1.1 : 1,
-        // Vibração sutil quando ligada (sempre ativa)
-        x: isDragging ? 0 : [0, 0.3, 0, -0.3, 0],
-        y: isDragging ? 0 : [0, -0.2, 0, 0.2, 0],
+        // Flutuação sutil indicando que está ligada
+        y: isDragging ? 0 : [0, -1.5, 0, 1.5, 0],
+        x: isDragging ? 0 : [0, 0.5, 0, -0.5, 0],
       }}
       transition={{
         scale: { type: "spring", stiffness: 300, damping: 30 },
-        x: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-        y: { duration: 1.8, repeat: Infinity, ease: "easeInOut" },
+        y: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+        x: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
       }}
     >
       {/* Spaceship Image */}
       <motion.img
-        src="https://cdn.builder.io/api/v1/image/assets%2F9f875574753c430c92586f7b0edc1f21%2Facc507d5cb7a48c1bebc0cdc1bb911ff?format=webp&width=800"
+        src="https://cdn.builder.io/api/v1/image/assets%2F4d288afc418148aaaf0f73eedbc53e2b%2F01991177d397420f9f7b55d6a6283724?format=webp&width=800"
         alt="Spaceship"
         className="w-full h-full object-contain drop-shadow-lg"
-        animate={{
-          filter: "drop-shadow(0 0 4px rgba(59, 130, 246, 0.5))",
-        }}
       />
 
       {/* Ship trails - apenas quando arrastando */}
