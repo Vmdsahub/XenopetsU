@@ -562,10 +562,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           setIsColliding(true);
           setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
           if (collision.collisionPoint) {
-            createCollisionSparks(
-              collision.collisionPoint.x,
-              collision.collisionPoint.y,
-            );
+            createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
           }
           playBarrierCollisionSound().catch(() => {}); // Som não-crítico
           setIsDecelerating(false);
@@ -634,16 +631,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       if (distanceFromCenter > barrierRadius) {
         // Calcula ponto de colisão na barreira
-        const angle = Math.atan2(
-          effectiveShipY - centerVisualY,
-          effectiveShipX - centerVisualX,
-        );
+        const angle = Math.atan2(effectiveShipY - centerVisualY, effectiveShipX - centerVisualX);
         const collisionX = centerVisualX + Math.cos(angle) * barrierRadius;
         const collisionY = centerVisualY + Math.sin(angle) * barrierRadius;
 
         return {
           isColliding: true,
-          collisionPoint: { x: collisionX, y: collisionY },
+          collisionPoint: { x: collisionX, y: collisionY }
         };
       }
 
@@ -761,10 +755,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       setIsColliding(true);
       setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
       if (collision.collisionPoint) {
-        createCollisionSparks(
-          collision.collisionPoint.x,
-          collision.collisionPoint.y,
-        );
+        createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
       }
       playBarrierCollisionSound().catch(() => {}); // Som não-crítico
       newX = shipPosRef.current.x;
@@ -867,10 +858,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         setIsColliding(true);
         setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
         if (collision.collisionPoint) {
-          createCollisionSparks(
-            collision.collisionPoint.x,
-            collision.collisionPoint.y,
-          );
+          createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
         }
         playBarrierCollisionSound().catch(() => {}); // Som não-crítico
         newX = shipPosRef.current.x;
@@ -1045,34 +1033,54 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         >
           {/* Animação de rotação continua */}
           <motion.div
-            className="w-full h-full rounded-full border-2 border-dashed"
+            className="w-full h-full rounded-full"
             style={{
+              border: "2px dashed",
               borderColor: isColliding
-                ? "rgba(239, 68, 68, 0.8)"
-                : "rgba(255, 255, 255, 0.15)",
+                ? "rgba(239, 68, 68, 0.9)"
+                : "rgba(255, 255, 255, 0.15)"
             }}
             animate={{
               rotate: 360,
-              borderColor: isColliding
-                ? [
-                    "rgba(239, 68, 68, 0.8)",
-                    "rgba(239, 68, 68, 0.3)",
-                    "rgba(239, 68, 68, 0.8)",
-                  ]
-                : "rgba(255, 255, 255, 0.15)",
             }}
             transition={{
               rotate: {
                 duration: 20,
                 repeat: Infinity,
-                ease: "linear",
-              },
-              borderColor: isColliding
-                ? {
-                    duration: 0.15,
-                    repeat: 0,
-                    ease: "easeInOut",
-                  }
+                ease: "linear"
+              }
+            }}
+          />
+
+          {/* Faíscas de colisão */}
+          {sparks.map((spark) => (
+            <motion.div
+              key={spark.id}
+              className="absolute w-1 h-1 bg-red-500 rounded-full"
+              style={{
+                left: spark.x,
+                top: spark.y,
+                boxShadow: "0 0 4px rgba(239, 68, 68, 0.8)"
+              }}
+              initial={{
+                x: 0,
+                y: 0,
+                opacity: 1,
+                scale: 1
+              }}
+              animate={{
+                x: spark.dx,
+                y: spark.dy,
+                opacity: 0,
+                scale: 0.2
+              }}
+              transition={{
+                duration: 0.4,
+                ease: "easeOut"
+              }}
+            />
+          ))}
+        </div>
                 : {
                     duration: 0,
                   },
