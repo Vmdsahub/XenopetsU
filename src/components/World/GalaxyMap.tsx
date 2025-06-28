@@ -388,6 +388,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
   const resetShipPosition = () => {
     setShipPosition({ x: 50, y: 50 });
+    setVelocity({ x: 0, y: 0 });
+    setIsDecelerating(false);
     animate(mapX, 0, { duration: 0.5 });
     animate(mapY, 0, { duration: 0.5 });
     animate(shipRotation, 0, { duration: 0.5 });
