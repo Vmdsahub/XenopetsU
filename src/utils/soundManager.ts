@@ -307,10 +307,37 @@ class EngineSound {
   private masterGain: GainNode | null = null;
   private isPlaying = false;
   private startTime = 0;
+  private lastStartTime = 0;
+  private startDebounceTimeout: NodeJS.Timeout | null = null;
+
+  // Constantes para controle de frequência
+  private readonly START_DEBOUNCE_MS = 50; // Debounce mínimo entre starts
+  private readonly MIN_PLAY_DURATION_MS = 100; // Duração mínima antes de parar
 
   start(): void {
+    const now = Date.now();
+
+    // Debounce - ignora chamadas muito frequentes
+    if (now - this.lastStartTime < this.START_DEBOUNCE_MS) {
+      return;
+    }
+
+    this.lastStartTime = now;
+
     // Se já está tocando, não inicia novamente
-    if (this.isPlaying) return;
+    if (this.isPlaying) {
+      // Cancela qualquer timeout de parada pendente
+      if (this.startDebounceTimeout) {
+        clearTimeout(this.startDebounceTimeout);
+        this.startDebounceTimeout = null;
+      }
+      return;
+    }
+
+    // Cancela qualquer timeout anterior
+    if (this.startDebounceTimeout) {
+      clearTimeout(this.startDebounceTimeout);
+    }
 
     try {
       this.audioContext = new (window.AudioContext ||
@@ -366,7 +393,7 @@ class EngineSound {
 
       // Envelope de volume master com fade-in suave
       masterGain.gain.setValueAtTime(0, this.startTime);
-      masterGain.gain.linearRampToValueAtTime(1, this.startTime + 0.2);
+      masterGain.gain.linearRampToValueAtTime(1, this.startTime + 0.15);
 
       // Inicia osciladores
       osc1.start(this.startTime);
@@ -388,11 +415,21 @@ class EngineSound {
   stop(): void {
     if (!this.isPlaying || !this.audioContext || !this.masterGain) return;
 
+    const timeSinceStart = Date.now() - this.lastStartTime;
+
+    // Se ainda não tocou por tempo suficiente, agenda parada para depois
+    if (timeSinceStart < this.MIN_PLAY_DURATION_MS) {
+      this.startDebounceTimeout = setTimeout(() => {
+        this.stop();
+      }, this.MIN_PLAY_DURATION_MS - timeSinceStart);
+      return;
+    }
+
     try {
       const stopTime = this.audioContext.currentTime;
 
-      // Fade out suave
-      this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.2);
+      // Fade out mais rápido
+      this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.1);
 
       // Para todos os osciladores após o fade
       setTimeout(() => {
@@ -414,7 +451,7 @@ class EngineSound {
         this.masterGain = null;
         this.audioContext = null;
         this.isPlaying = false;
-      }, 250);
+      }, 150);
     } catch (error) {
       console.warn("Engine sound failed to stop:", error);
       this.isPlaying = false;
