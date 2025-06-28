@@ -160,7 +160,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas realista para o espaço
+  // Sistema de estrelas com mais densidade e parallax forte
   const starData = useMemo(() => {
     // Cores realistas de estrelas baseadas na temperatura
     const starColors = [
@@ -187,27 +187,27 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         bg: {
           sizeMin: 0.3,
           sizeMax: 0.8,
-          opacityMin: 0.3,
-          opacityMax: 0.7,
-          speed: 0.02,
+          opacityMin: 0.4,
+          opacityMax: 0.8,
+          speed: 0.1, // Parallax mais forte
         },
         mid: {
           sizeMin: 0.5,
           sizeMax: 1.2,
-          opacityMin: 0.4,
-          opacityMax: 0.8,
-          speed: 0.08,
+          opacityMin: 0.5,
+          opacityMax: 0.9,
+          speed: 0.3, // Parallax mais forte
         },
         fg: {
           sizeMin: 0.8,
           sizeMax: 1.8,
-          opacityMin: 0.6,
+          opacityMin: 0.7,
           opacityMax: 1.0,
-          speed: 0.2,
+          speed: 0.6, // Parallax mais forte
         },
       }[layerType];
 
-      const MAP_SCALE = 15000;
+      const MAP_SCALE = 18000; // Área maior para mais estrelas
 
       return {
         x: (hash(seed * 11) - 0.5) * MAP_SCALE,
@@ -219,26 +219,26 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           baseConfig.opacityMin +
           hash(seed * 19) * (baseConfig.opacityMax - baseConfig.opacityMin),
         color:
-          // Apenas 5% das estrelas têm cor, resto é branco
-          hash(seed * 23) > 0.95
+          // 8% das estrelas têm cor
+          hash(seed * 23) > 0.92
             ? starColors[Math.floor(hash(seed * 29) * starColors.length)]
             : "#ffffff",
         speed: baseConfig.speed,
-        // Cintilação muito sutil
+        // Cintilação sutil
         twinkleSpeed: 0.5 + hash(seed * 31) * 1.0,
         twinklePhase: hash(seed * 37) * Math.PI * 2,
-        twinkleIntensity: 0.1 + hash(seed * 41) * 0.2, // Muito sutil
+        twinkleIntensity: 0.1 + hash(seed * 41) * 0.15,
       };
     };
 
     return {
-      background: Array.from({ length: 800 }, (_, i) =>
+      background: Array.from({ length: 2500 }, (_, i) => // Mais estrelas de fundo
         createStar(i + 1000, "bg"),
       ),
-      middle: Array.from({ length: 400 }, (_, i) =>
+      middle: Array.from({ length: 1200 }, (_, i) => // Mais estrelas médias
         createStar(i + 2000, "mid"),
       ),
-      foreground: Array.from({ length: 150 }, (_, i) =>
+      foreground: Array.from({ length: 600 }, (_, i) => // Mais estrelas próximas
         createStar(i + 3000, "fg"),
       ),
     };
@@ -252,7 +252,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Sistema de renderização de estrelas realista
+  // Sistema de renderização de estrelas com parallax forte
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -267,7 +267,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
-    // Tempo para cintilação muito sutil
+    // Tempo para cintilação sutil
     const currentTime = Date.now() * 0.001;
 
     // Função hash para geração procedural
@@ -280,19 +280,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       return (h >>> 0) / 4294967296;
     };
 
-    // Gera estrelas como pontos de luz distantes
+    // Gera estrelas com parallax forte
     const generateLayer = (density: number, speed: number, layer: number) => {
       const cameraX = -currentMapX * speed;
       const cameraY = -currentMapY * speed;
 
-      const margin = 100;
-      const startX = Math.floor((cameraX - margin) / 80) * 80;
-      const endX = Math.ceil((cameraX + canvasWidth + margin) / 80) * 80;
-      const startY = Math.floor((cameraY - margin) / 80) * 80;
-      const endY = Math.ceil((cameraY + canvasHeight + margin) / 80) * 80;
+      const margin = 150;
+      const gridSize = 60; // Grid menor para mais densidade
+      const startX = Math.floor((cameraX - margin) / gridSize) * gridSize;
+      const endX = Math.ceil((cameraX + canvasWidth + margin) / gridSize) * gridSize;
+      const startY = Math.floor((cameraY - margin) / gridSize) * gridSize;
+      const endY = Math.ceil((cameraY + canvasHeight + margin) / gridSize) * gridSize;
 
-      for (let gx = startX; gx < endX; gx += 80) {
-        for (let gy = startY; gy < endY; gy += 80) {
+      for (let gx = startX; gx < endX; gx += gridSize) {
+        for (let gy = startY; gy < endY; gy += gridSize) {
           const cellHash = hash(gx, gy, layer);
           const numStars = Math.floor(cellHash * density);
 
@@ -300,8 +301,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             const starHash = hash(gx + i * 137, gy + i * 241, layer + i);
             const starHash2 = hash(gx + i * 173, gy + i * 197, layer + i + 1000);
 
-            const localX = starHash * 80;
-            const localY = starHash2 * 80;
+            const localX = starHash * gridSize;
+            const localY = starHash2 * gridSize;
 
             const worldX = gx + localX;
             const worldY = gy + localY;
@@ -329,16 +330,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
               const baseOpacity =
                 layer === 1
-                  ? 0.3 + opacityHash * 0.4
+                  ? 0.4 + opacityHash * 0.4
                   : layer === 2
-                    ? 0.4 + opacityHash * 0.4
-                    : 0.6 + opacityHash * 0.4;
+                    ? 0.5 + opacityHash * 0.4
+                    : 0.7 + opacityHash * 0.3;
 
-              // Cintilação muito sutil
+              // Cintilação sutil
               const twinkleSeed = hash(worldX * 3.1, worldY * 3.7, layer);
               const twinkleSpeed = 0.3 + twinkleSeed * 0.7;
               const twinklePhase = twinkleSeed * Math.PI * 2;
-              const twinkleIntensity = 0.05 + twinkleSeed * 0.1; // Muito sutil
+              const twinkleIntensity = 0.08 + twinkleSeed * 0.12;
               const twinkleFactor =
                 1 + Math.sin(currentTime * twinkleSpeed + twinklePhase) * twinkleIntensity;
 
@@ -346,7 +347,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               const finalOpacity = Math.min(1, baseOpacity * twinkleFactor);
 
               // Cores realistas de estrelas
-              const isColored = colorHash > 0.95; // Apenas 5% coloridas
+              const isColored = colorHash > 0.92; // 8% coloridas
               let color = "#ffffff";
               
               if (isColored) {
@@ -380,10 +381,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }
     };
 
-    // Renderiza camadas com movimento parallax sutil
-    generateLayer(3, 0.02, 1); // Background - movimento muito lento
-    generateLayer(2, 0.08, 2); // Middle - movimento lento
-    generateLayer(1, 0.2, 3);  // Foreground - movimento normal
+    // Renderiza camadas com parallax forte e mais densidade
+    generateLayer(6, 0.1, 1);  // Background - mais estrelas, parallax perceptível
+    generateLayer(4, 0.3, 2);  // Middle - parallax médio
+    generateLayer(2, 0.6, 3);  // Foreground - parallax forte
 
     ctx.globalAlpha = 1;
   }, [mapX, mapY]);
@@ -1040,7 +1041,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         </motion.div>
       )}
 
-      {/* Canvas para estrelas com parallax realista */}
+      {/* Canvas para estrelas com parallax forte */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
