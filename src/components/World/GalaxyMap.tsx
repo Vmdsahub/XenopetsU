@@ -533,10 +533,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
 
-    // Momentum simples baseado no último movimento
+    // Momentum suavizado baseado no movimento
     if (deltaTime > 0) {
-      const velX = Math.max(-2, Math.min(2, deltaX * 0.1));
-      const velY = Math.max(-2, Math.min(2, deltaY * 0.1));
+      const velX = Math.max(-1.5, Math.min(1.5, deltaX * 0.08));
+      const velY = Math.max(-1.5, Math.min(1.5, deltaY * 0.08));
       setVelocity({ x: velX, y: velY });
     }
 
