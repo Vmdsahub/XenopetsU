@@ -298,165 +298,98 @@ const playNotificationBeep = (): Promise<void> => {
 };
 
 /**
- * Enhanced Engine sound manager for ship motors
+ * Simplified Engine sound - creates new instances for 100% reliability
  */
-class EngineSound {
-  private audioContext: AudioContext | null = null;
-  private oscillators: OscillatorNode[] = [];
-  private gainNodes: GainNode[] = [];
-  private masterGain: GainNode | null = null;
-  private isPlaying = false;
-  private startTime = 0;
-  private lastStartTime = 0;
-  private startDebounceTimeout: NodeJS.Timeout | null = null;
+let currentEngineSound: { stop: () => void } | null = null;
 
-  // Sem constantes de controle - som responde imediatamente
+const createEngineSound = () => {
+  try {
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
 
-  start(): void {
-    // Se já está tocando, força parada imediata e recomeça
-    if (this.isPlaying) {
-      this.forceStop();
-    }
+    const startTime = audioContext.currentTime;
 
-    this.lastStartTime = Date.now();
+    // Cria múltiplos osciladores para som mais rico
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const osc3 = audioContext.createOscillator();
 
-    // Cancela qualquer timeout anterior
-    if (this.startDebounceTimeout) {
-      clearTimeout(this.startDebounceTimeout);
-    }
+    const gain1 = audioContext.createGain();
+    const gain2 = audioContext.createGain();
+    const gain3 = audioContext.createGain();
+    const masterGain = audioContext.createGain();
 
-    try {
-      this.audioContext = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+    // Conecta osciladores
+    osc1.connect(gain1);
+    osc2.connect(gain2);
+    osc3.connect(gain3);
 
-      this.startTime = this.audioContext.currentTime;
+    gain1.connect(masterGain);
+    gain2.connect(masterGain);
+    gain3.connect(masterGain);
+    masterGain.connect(audioContext.destination);
 
-      // Cria múltiplos osciladores para som mais rico
-      const osc1 = this.audioContext.createOscillator();
-      const osc2 = this.audioContext.createOscillator();
-      const osc3 = this.audioContext.createOscillator();
+    // Configuração para som de nave espacial futurística
+    osc1.type = "sine";
+    osc2.type = "sine";
+    osc3.type = "triangle";
 
-      const gain1 = this.audioContext.createGain();
-      const gain2 = this.audioContext.createGain();
-      const gain3 = this.audioContext.createGain();
-      const masterGain = this.audioContext.createGain();
+    // Frequências base e harmônicos
+    osc1.frequency.setValueAtTime(120, startTime);
+    osc2.frequency.setValueAtTime(240, startTime); // oitava
+    osc3.frequency.setValueAtTime(180, startTime); // quinta
 
-      // Conecta osciladores
-      osc1.connect(gain1);
-      osc2.connect(gain2);
-      osc3.connect(gain3);
+    // Modulação sutil para som vivo
+    const lfo = audioContext.createOscillator();
+    const lfoGain = audioContext.createGain();
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc1.frequency);
+    lfoGain.connect(osc2.frequency);
 
-      gain1.connect(masterGain);
-      gain2.connect(masterGain);
-      gain3.connect(masterGain);
-      masterGain.connect(this.audioContext.destination);
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(3, startTime);
+    lfoGain.gain.setValueAtTime(8, startTime);
 
-      // Configuração para som de nave espacial futurística
-      osc1.type = "sine";
-      osc2.type = "sine";
-      osc3.type = "triangle";
+    // Volumes individuais
+    gain1.gain.setValueAtTime(0.04, startTime);
+    gain2.gain.setValueAtTime(0.02, startTime);
+    gain3.gain.setValueAtTime(0.015, startTime);
 
-      // Frequências base e harmônicos
-      osc1.frequency.setValueAtTime(120, this.startTime);
-      osc2.frequency.setValueAtTime(240, this.startTime); // oitava
-      osc3.frequency.setValueAtTime(180, this.startTime); // quinta
+    // Envelope de volume master com fade-in rápido
+    masterGain.gain.setValueAtTime(0, startTime);
+    masterGain.gain.linearRampToValueAtTime(1, startTime + 0.1);
 
-      // Modulação sutil para som vivo
-      const lfo = this.audioContext.createOscillator();
-      const lfoGain = this.audioContext.createGain();
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc1.frequency);
-      lfoGain.connect(osc2.frequency);
+    // Inicia osciladores
+    const oscillators = [osc1, osc2, osc3, lfo];
+    oscillators.forEach((osc) => osc.start(startTime));
 
-      lfo.type = "sine";
-      lfo.frequency.setValueAtTime(3, this.startTime);
-      lfoGain.gain.setValueAtTime(8, this.startTime);
-
-      // Volumes individuais
-      gain1.gain.setValueAtTime(0.04, this.startTime);
-      gain2.gain.setValueAtTime(0.02, this.startTime);
-      gain3.gain.setValueAtTime(0.015, this.startTime);
-
-      // Envelope de volume master com fade-in suave
-      masterGain.gain.setValueAtTime(0, this.startTime);
-      masterGain.gain.linearRampToValueAtTime(1, this.startTime + 0.15);
-
-      // Inicia osciladores
-      osc1.start(this.startTime);
-      osc2.start(this.startTime);
-      osc3.start(this.startTime);
-      lfo.start(this.startTime);
-
-      // Armazena referências para cleanup
-      this.oscillators = [osc1, osc2, osc3, lfo];
-      this.gainNodes = [gain1, gain2, gain3, lfoGain];
-      this.masterGain = masterGain;
-      this.isPlaying = true;
-    } catch (error) {
-      console.warn("Engine sound failed to start:", error);
-      this.isPlaying = false;
-    }
-  }
-
-  stop(): void {
-    if (!this.isPlaying || !this.audioContext || !this.masterGain) return;
-
-    try {
-      const stopTime = this.audioContext.currentTime;
-
-      // Fade out mais rápido
-      this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.1);
-
-      // Para todos os osciladores após o fade
-      setTimeout(() => {
-        this.forceStop();
-      }, 150);
-    } catch (error) {
-      console.warn("Engine sound failed to stop:", error);
-      this.isPlaying = false;
-    }
-  }
-
-  // Método para parada forçada imediata sem fade
-  private forceStop(): void {
-    try {
-      // Cancela qualquer timeout pendente
-      if (this.startDebounceTimeout) {
-        clearTimeout(this.startDebounceTimeout);
-        this.startDebounceTimeout = null;
-      }
-
-      // Para todos os osciladores imediatamente
-      this.oscillators.forEach((osc) => {
+    // Retorna controle para parar
+    return {
+      stop: () => {
         try {
-          osc.stop();
-        } catch (e) {
-          // Ignora erros se já parou
+          const stopTime = audioContext.currentTime;
+          masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.1);
+
+          setTimeout(() => {
+            oscillators.forEach((osc) => {
+              try {
+                osc.stop();
+              } catch (e) {
+                // Ignora erros
+              }
+            });
+            audioContext.close();
+          }, 150);
+        } catch (error) {
+          console.warn("Engine sound stop failed:", error);
         }
-      });
-
-      if (this.audioContext) {
-        this.audioContext.close();
-      }
-
-      // Limpa referências
-      this.oscillators = [];
-      this.gainNodes = [];
-      this.masterGain = null;
-      this.audioContext = null;
-      this.isPlaying = false;
-      this.lastStartTime = 0;
-    } catch (error) {
-      console.warn("Force stop failed:", error);
-      this.isPlaying = false;
-    }
+      },
+    };
+  } catch (error) {
+    console.warn("Engine sound creation failed:", error);
+    return { stop: () => {} };
   }
-
-  // Método para verificar se está tocando
-  isCurrentlyPlaying(): boolean {
-    return this.isPlaying;
-  }
-}
+};
 
 // Instância global do som do motor
 const engineSound = new EngineSound();
