@@ -313,14 +313,9 @@ class EngineSound {
   // Sem constantes de controle - som responde imediatamente
 
   start(): void {
-    // Se já está tocando, não inicia novamente
+    // Se já está tocando, força parada imediata e recomeça
     if (this.isPlaying) {
-      // Cancela qualquer timeout de parada pendente
-      if (this.startDebounceTimeout) {
-        clearTimeout(this.startDebounceTimeout);
-        this.startDebounceTimeout = null;
-      }
-      return;
+      this.forceStop();
     }
 
     this.lastStartTime = Date.now();
