@@ -628,6 +628,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           <div>Vel X: {velocity.x.toFixed(3)}</div>
           <div>Vel Y: {velocity.y.toFixed(3)}</div>
 
+          {nearbyPoint && (
+            <>
+              <div className="text-orange-400 font-semibold mt-2">
+                Proximidade:
+              </div>
+              <div className="text-xs">
+                {(() => {
+                  const point = GALAXY_POINTS.find((p) => p.id === nearbyPoint);
+                  if (!point) return "Nenhum";
+                  const distance = getToroidalDistance(shipPosition, point);
+                  return `${point.name} (${distance.toFixed(2)})`;
+                })()}
+              </div>
+            </>
+          )}
+
           <div className="text-purple-400 font-semibold mt-2">Status:</div>
           <div>
             {isDragging
