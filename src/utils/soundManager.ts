@@ -409,7 +409,7 @@ export const stopEngineSound = (): void => {
   engineSound.stop();
 };
 
-export const playCollisionSound = (): Promise<void> => {
+export const playBarrierCollisionSound = (): Promise<void> => {
   return playCollisionSound().catch((error) => {
     console.warn("Collision sound failed:", error.message);
   });
