@@ -161,7 +161,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   useEffect(() => {
     if (
       !isDragging &&
-      (Math.abs(velocity.x) > 0.05 || Math.abs(velocity.y) > 0.05)
+      (Math.abs(velocity.x) > 0.01 || Math.abs(velocity.y) > 0.01)
     ) {
       setIsDecelerating(true);
 
