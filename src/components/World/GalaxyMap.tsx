@@ -686,7 +686,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const effectiveShipX = centerVisualX - proposedMapX;
       const effectiveShipY = centerVisualY - proposedMapY;
 
-      const barrierRadius = 300; // 600px de diâmetro = 300px de raio
+      const barrierRadius = 600; // 1200px de diâmetro = 600px de raio (2x maior)
       const distanceFromCenter = Math.sqrt(
         Math.pow(effectiveShipX - centerVisualX, 2) +
           Math.pow(effectiveShipY - centerVisualY, 2),
@@ -694,21 +694,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       // Se ultrapassar a barreira, bloqueia completamente
       if (distanceFromCenter > barrierRadius) {
-        const angle = Math.atan2(
-          effectiveShipY - centerVisualY,
-          effectiveShipX - centerVisualX,
-        );
-        const limitX = centerVisualX + Math.cos(angle) * (barrierRadius - 10);
-        const limitY = centerVisualY + Math.sin(angle) * (barrierRadius - 10);
-
-        // Converte de volta para coordenadas do mundo
-        const limitMapX = centerVisualX - limitX;
-        const limitMapY = centerVisualY - limitY;
-        newX = shipPosRef.current.x - (limitMapX - currentMapX) / 12;
-        newY = shipPosRef.current.y - (limitMapY - currentMapY) / 12;
-
-        newX = wrap(newX, 0, WORLD_CONFIG.width);
-        newY = wrap(newY, 0, WORLD_CONFIG.height);
+        // Não permite o movimento - mantém posição atual
+        newX = shipPosRef.current.x;
+        newY = shipPosRef.current.y;
 
         // Para todo movimento
         setVelocity({ x: 0, y: 0 });
@@ -987,7 +975,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           style={{
             left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
             top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
-            width: "600px", // Diâmetro menor para corresponder ao raio de colisão
+            width: "600px", // Diâmetro menor para corresponder ao raio de colis��o
             height: "600px",
             transform: "translate(-50%, -50%)",
             border: "2px dashed rgba(255, 255, 255, 0.15)",
