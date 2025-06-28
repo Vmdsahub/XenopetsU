@@ -317,13 +317,6 @@ class EngineSound {
   start(): void {
     const now = Date.now();
 
-    // Debounce - ignora chamadas muito frequentes
-    if (now - this.lastStartTime < this.START_DEBOUNCE_MS) {
-      return;
-    }
-
-    this.lastStartTime = now;
-
     // Se já está tocando, não inicia novamente
     if (this.isPlaying) {
       // Cancela qualquer timeout de parada pendente
@@ -333,6 +326,13 @@ class EngineSound {
       }
       return;
     }
+
+    // Debounce - ignora chamadas muito frequentes APENAS se não parou recentemente
+    if (now - this.lastStartTime < this.START_DEBOUNCE_MS) {
+      return;
+    }
+
+    this.lastStartTime = now;
 
     // Cancela qualquer timeout anterior
     if (this.startDebounceTimeout) {
