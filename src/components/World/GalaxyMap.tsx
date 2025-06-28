@@ -770,27 +770,53 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         WORLD_CONFIG.height,
       );
 
-      // Verifica colisão com barreira circular
-      const centerX = WORLD_CONFIG.width / 2;
-      const centerY = WORLD_CONFIG.height / 2;
-      const barrierRadius = 15;
+      // Verifica colisão com barreira circular usando coordenadas visuais
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const centerVisualX = canvas.width / 2;
+        const centerVisualY = canvas.height / 2;
 
-      const distanceFromCenter = Math.sqrt(
-        Math.pow(proposedX - centerX, 2) + Math.pow(proposedY - centerY, 2),
-      );
+        const currentMapX = mapX.get();
+        const currentMapY = mapY.get();
+        const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
+        const deltaMapY = (shipPosRef.current.y - proposedY) * 12;
+        const proposedMapX = currentMapX + deltaMapX;
+        const proposedMapY = currentMapY + deltaMapY;
 
-      let newX = proposedX;
-      let newY = proposedY;
+        const effectiveShipX = centerVisualX - proposedMapX;
+        const effectiveShipY = centerVisualY - proposedMapY;
 
-      // Se a nova posição ultrapassar a barreira, limita na borda
-      if (distanceFromCenter > barrierRadius) {
-        const angle = Math.atan2(proposedY - centerY, proposedX - centerX);
-        newX = centerX + Math.cos(angle) * (barrierRadius - 1);
-        newY = centerY + Math.sin(angle) * (barrierRadius - 1);
+        const barrierRadius = 300;
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(effectiveShipX - centerVisualX, 2) +
+            Math.pow(effectiveShipY - centerVisualY, 2),
+        );
 
-        // Para o momentum se bater na barreira
-        setVelocity({ x: 0, y: 0 });
-        setIsDecelerating(false);
+        let newX = proposedX;
+        let newY = proposedY;
+
+        if (distanceFromCenter > barrierRadius) {
+          const angle = Math.atan2(
+            effectiveShipY - centerVisualY,
+            effectiveShipX - centerVisualX,
+          );
+          const limitX = centerVisualX + Math.cos(angle) * (barrierRadius - 10);
+          const limitY = centerVisualY + Math.sin(angle) * (barrierRadius - 10);
+
+          const limitMapX = centerVisualX - limitX;
+          const limitMapY = centerVisualY - limitY;
+          newX = shipPosRef.current.x - (limitMapX - currentMapX) / 12;
+          newY = shipPosRef.current.y - (limitMapY - currentMapY) / 12;
+
+          newX = wrap(newX, 0, WORLD_CONFIG.width);
+          newY = wrap(newY, 0, WORLD_CONFIG.height);
+
+          setVelocity({ x: 0, y: 0 });
+          setIsDecelerating(false);
+        }
+      } else {
+        let newX = proposedX;
+        let newY = proposedY;
       }
 
       setShipPosition({ x: newX, y: newY });
