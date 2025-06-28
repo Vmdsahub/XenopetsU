@@ -386,7 +386,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               const floatOffsetX = Math.sin(currentTime * floatSpeedX + floatPhaseX) * floatRange;
               const floatOffsetY = Math.cos(currentTime * floatSpeedY + floatPhaseY) * floatRange;
 
-              const animatedSize = baseSize * blinkFactor;
+              // Fix: Ensure animatedSize is never negative
+              const animatedSize = Math.max(0, baseSize * blinkFactor);
               const animatedOpacity = Math.min(1, baseOpacity * blinkFactor);
               const animatedX = screenX + floatOffsetX;
               const animatedY = screenY + floatOffsetY;
