@@ -531,7 +531,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     >
       {/* Camada 1 - Estrelas distantes (parallax lento) */}
       <div
-        className="absolute -inset-1/4 opacity-60 pointer-events-none"
+        className="absolute inset-0 w-[300%] h-[300%] -left-full -top-full opacity-60 pointer-events-none overflow-hidden"
         data-star-layer="0"
       >
         {stars
@@ -541,8 +541,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               key={`layer0-${star.id}`}
               className="absolute bg-white rounded-full"
               style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
+                left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
+                top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
                 width: `${star.size * 0.8}px`,
                 height: `${star.size * 0.8}px`,
                 animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
@@ -553,7 +553,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       {/* Camada 2 - Estrelas médias (parallax médio) */}
       <div
-        className="absolute -inset-1/4 opacity-75 pointer-events-none"
+        className="absolute inset-0 w-[300%] h-[300%] -left-full -top-full opacity-75 pointer-events-none overflow-hidden"
         data-star-layer="1"
       >
         {stars
@@ -563,8 +563,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               key={`layer1-${star.id}`}
               className="absolute bg-cyan-100 rounded-full"
               style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
+                left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
+                top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
                 width: `${star.size}px`,
                 height: `${star.size}px`,
                 animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
@@ -575,7 +575,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       {/* Camada 3 - Estrelas próximas (parallax rápido) */}
       <div
-        className="absolute -inset-1/4 opacity-90 pointer-events-none"
+        className="absolute inset-0 w-[300%] h-[300%] -left-full -top-full opacity-90 pointer-events-none overflow-hidden"
         data-star-layer="2"
       >
         {stars
@@ -585,8 +585,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               key={`layer2-${star.id}`}
               className="absolute bg-blue-100 rounded-full"
               style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
+                left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
+                top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
                 width: `${star.size * 1.2}px`,
                 height: `${star.size * 1.2}px`,
                 animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
