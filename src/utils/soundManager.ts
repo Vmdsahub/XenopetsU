@@ -210,32 +210,32 @@ const playCollisionSound = (): Promise<void> => {
 
       // Configure the filter for a cleaner sound
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(1000, audioContext.currentTime);
-      filter.Q.setValueAtTime(1, audioContext.currentTime);
+      filter.frequency.setValueAtTime(800, audioContext.currentTime); // Frequência mais baixa
+      filter.Q.setValueAtTime(1.5, audioContext.currentTime);
 
       // Create a sharp, clean collision sound
       oscillator.type = "triangle"; // Smoother than sawtooth
-      oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(120, audioContext.currentTime); // Frequência mais baixa
       oscillator.frequency.exponentialRampToValueAtTime(
-        80,
-        audioContext.currentTime + 0.15,
+        60,
+        audioContext.currentTime + 0.2, // Duração mais longa
       );
 
       // Clean volume envelope
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(
-        0.2,
+        0.15, // Volume mais baixo
         audioContext.currentTime + 0.01,
       );
       gainNode.gain.exponentialRampToValueAtTime(
         0.001,
-        audioContext.currentTime + 0.15,
+        audioContext.currentTime + 0.2, // Duração mais longa
       );
 
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.15);
+      oscillator.stop(audioContext.currentTime + 0.2);
 
-      setTimeout(() => resolve(), 200);
+      setTimeout(() => resolve(), 250);
     } catch (error) {
       console.warn("Web Audio API collision sound failed:", error);
       resolve();
@@ -293,10 +293,17 @@ class EngineSound {
   private masterGain: GainNode | null = null;
   private isPlaying = false;
   private startTime = 0;
+  private fadeOutTimeout: NodeJS.Timeout | null = null;
 
   start(): void {
     // Se já está tocando, não inicia novamente
     if (this.isPlaying) return;
+
+    // Cancela qualquer fade out pendente
+    if (this.fadeOutTimeout) {
+      clearTimeout(this.fadeOutTimeout);
+      this.fadeOutTimeout = null;
+    }
 
     try {
       this.audioContext = new (window.AudioContext ||
@@ -324,15 +331,15 @@ class EngineSound {
       gain3.connect(masterGain);
       masterGain.connect(this.audioContext.destination);
 
-      // Configuração para som de nave espacial futurística
+      // Configuração para som de nave espacial futurística mais suave
       osc1.type = "sine";
       osc2.type = "sine";
       osc3.type = "triangle";
 
-      // Frequências base e harmônicos
-      osc1.frequency.setValueAtTime(120, this.startTime);
-      osc2.frequency.setValueAtTime(240, this.startTime); // oitava
-      osc3.frequency.setValueAtTime(180, this.startTime); // quinta
+      // Frequências mais baixas e harmônicas
+      osc1.frequency.setValueAtTime(80, this.startTime); // Mais baixo
+      osc2.frequency.setValueAtTime(160, this.startTime); // oitava
+      osc3.frequency.setValueAtTime(120, this.startTime); // quinta
 
       // Modulação sutil para som vivo
       const lfo = this.audioContext.createOscillator();
@@ -342,17 +349,17 @@ class EngineSound {
       lfoGain.connect(osc2.frequency);
 
       lfo.type = "sine";
-      lfo.frequency.setValueAtTime(3, this.startTime);
-      lfoGain.gain.setValueAtTime(8, this.startTime);
+      lfo.frequency.setValueAtTime(2, this.startTime); // Modulação mais lenta
+      lfoGain.gain.setValueAtTime(5, this.startTime); // Modulação mais sutil
 
-      // Volumes individuais
-      gain1.gain.setValueAtTime(0.04, this.startTime);
-      gain2.gain.setValueAtTime(0.02, this.startTime);
-      gain3.gain.setValueAtTime(0.015, this.startTime);
+      // Volumes individuais mais baixos
+      gain1.gain.setValueAtTime(0.025, this.startTime); // Reduzido
+      gain2.gain.setValueAtTime(0.015, this.startTime); // Reduzido
+      gain3.gain.setValueAtTime(0.01, this.startTime); // Reduzido
 
       // Envelope de volume master com fade-in suave
       masterGain.gain.setValueAtTime(0, this.startTime);
-      masterGain.gain.linearRampToValueAtTime(1, this.startTime + 0.2);
+      masterGain.gain.linearRampToValueAtTime(1, this.startTime + 0.3); // Fade-in mais longo
 
       // Inicia osciladores
       osc1.start(this.startTime);
@@ -378,11 +385,11 @@ class EngineSound {
     try {
       const stopTime = this.audioContext.currentTime;
       
-      // Fade out suave
-      this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.2);
+      // Fade out mais suave e rápido
+      this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.15);
 
       // Para todos os osciladores após o fade
-      setTimeout(() => {
+      this.fadeOutTimeout = setTimeout(() => {
         this.oscillators.forEach(osc => {
           try {
             osc.stop();
@@ -401,7 +408,8 @@ class EngineSound {
         this.masterGain = null;
         this.audioContext = null;
         this.isPlaying = false;
-      }, 250);
+        this.fadeOutTimeout = null;
+      }, 200); // Tempo reduzido
 
     } catch (error) {
       console.warn("Engine sound failed to stop:", error);
@@ -431,10 +439,8 @@ export const playNotificationSound = (): Promise<void> => {
 };
 
 export const startEngineSound = (): void => {
-  // Só inicia se não estiver já tocando
-  if (!engineSound.isCurrentlyPlaying()) {
-    engineSound.start();
-  }
+  // Sempre inicia o som, mesmo se já estiver tocando (para garantir responsividade)
+  engineSound.start();
 };
 
 export const stopEngineSound = (): void => {

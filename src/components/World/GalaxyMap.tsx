@@ -160,7 +160,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas com mais densidade e parallax forte
+  // Sistema de estrelas com direções diferentes para cada camada
   const starData = useMemo(() => {
     // Cores realistas de estrelas baseadas na temperatura
     const starColors = [
@@ -189,21 +189,24 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           sizeMax: 0.8,
           opacityMin: 0.4,
           opacityMax: 0.8,
-          speed: 0.1, // Parallax mais forte
+          speedX: 0.08, // Movimento horizontal lento
+          speedY: 0.03, // Movimento vertical muito lento
         },
         mid: {
           sizeMin: 0.5,
           sizeMax: 1.2,
           opacityMin: 0.5,
           opacityMax: 0.9,
-          speed: 0.3, // Parallax mais forte
+          speedX: 0.25, // Movimento diagonal
+          speedY: 0.15, // Movimento diagonal
         },
         fg: {
           sizeMin: 0.8,
           sizeMax: 1.8,
           opacityMin: 0.7,
           opacityMax: 1.0,
-          speed: 0.6, // Parallax mais forte
+          speedX: 0.4, // Movimento mais vertical
+          speedY: 0.5, // Movimento mais vertical
         },
       }[layerType];
 
@@ -223,7 +226,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           hash(seed * 23) > 0.92
             ? starColors[Math.floor(hash(seed * 29) * starColors.length)]
             : "#ffffff",
-        speed: baseConfig.speed,
+        speedX: baseConfig.speedX,
+        speedY: baseConfig.speedY,
         // Cintilação sutil
         twinkleSpeed: 0.5 + hash(seed * 31) * 1.0,
         twinklePhase: hash(seed * 37) * Math.PI * 2,
@@ -252,7 +256,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Sistema de renderização de estrelas com parallax forte
+  // Sistema de renderização de estrelas com parallax em direções diferentes
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -280,10 +284,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       return (h >>> 0) / 4294967296;
     };
 
-    // Gera estrelas com parallax forte
-    const generateLayer = (density: number, speed: number, layer: number) => {
-      const cameraX = -currentMapX * speed;
-      const cameraY = -currentMapY * speed;
+    // Gera estrelas com parallax em direções diferentes
+    const generateLayer = (density: number, speedX: number, speedY: number, layer: number) => {
+      // Cada camada se move em direção diferente
+      const cameraX = -currentMapX * speedX;
+      const cameraY = -currentMapY * speedY;
 
       const margin = 150;
       const gridSize = 60; // Grid menor para mais densidade
@@ -381,10 +386,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }
     };
 
-    // Renderiza camadas com parallax forte e mais densidade
-    generateLayer(6, 0.1, 1);  // Background - mais estrelas, parallax perceptível
-    generateLayer(4, 0.3, 2);  // Middle - parallax médio
-    generateLayer(2, 0.6, 3);  // Foreground - parallax forte
+    // Renderiza camadas com parallax em direções diferentes
+    generateLayer(6, 0.08, 0.03, 1);  // Background - movimento horizontal lento
+    generateLayer(4, 0.25, 0.15, 2);  // Middle - movimento diagonal
+    generateLayer(2, 0.4, 0.5, 3);    // Foreground - movimento mais vertical
 
     ctx.globalAlpha = 1;
   }, [mapX, mapY]);
@@ -1041,7 +1046,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         </motion.div>
       )}
 
-      {/* Canvas para estrelas com parallax forte */}
+      {/* Canvas para estrelas com parallax em direções diferentes */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
