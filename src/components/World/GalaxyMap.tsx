@@ -230,9 +230,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     };
 
     return {
-      background: createUniformStars(400, "bg", 1000),
-      middle: createUniformStars(200, "mid", 2000),
-      foreground: createUniformStars(80, "fg", 3000),
+      background: createUniformStars(1000, "bg", 1000), // Aumentado para cobrir mapa maior
+      middle: createUniformStars(500, "mid", 2000),
+      foreground: createUniformStars(200, "fg", 3000),
     };
   }, []);
 
