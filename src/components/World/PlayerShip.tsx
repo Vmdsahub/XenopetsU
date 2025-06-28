@@ -12,6 +12,7 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
   rotation,
   isNearPoint,
   isDragging,
+  isDecelerating = false,
 }) => {
   return (
     <motion.div
