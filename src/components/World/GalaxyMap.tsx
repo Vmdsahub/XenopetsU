@@ -240,7 +240,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Geraç��o dinâmica de estrelas baseada na posição da câmera
+  // Geração dinâmica de estrelas baseada na posição da câmera
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -597,6 +597,27 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       };
     }
   }, [isDragging]);
+
+  // Função para verificar colisão com barreira
+  const checkBarrierCollision = useCallback(
+    (proposedMapX: number, proposedMapY: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return false;
+
+      const centerVisualX = canvas.width / 2;
+      const centerVisualY = canvas.height / 2;
+      const effectiveShipX = centerVisualX - proposedMapX;
+      const effectiveShipY = centerVisualY - proposedMapY;
+      const barrierRadius = 1200;
+      const distanceFromCenter = Math.sqrt(
+        Math.pow(effectiveShipX - centerVisualX, 2) +
+          Math.pow(effectiveShipY - centerVisualY, 2),
+      );
+
+      return distanceFromCenter > barrierRadius;
+    },
+    [],
+  );
 
   // Função para calcular distância toroidal correta
   const getToroidalDistance = (
