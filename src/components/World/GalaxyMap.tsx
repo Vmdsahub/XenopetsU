@@ -763,27 +763,27 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       {/* Mapa visual - movido pelo drag acima */}
       <motion.div
         ref={mapRef}
-        className="absolute inset-0 w-[500%] h-[500%] -left-[200%] -top-[200%] pointer-events-none"
+        className="absolute inset-0 w-[300%] h-[300%] -left-full -top-full pointer-events-none"
         style={{
           x: mapX,
           y: mapY,
           willChange: "transform", // otimização para GPU
         }}
       >
-        {/* Renderiza mais cópias para wrap seamless perfeito */}
-        {[-200, -100, 0, 100, 200].map((xOffset) =>
-          [-200, -100, 0, 100, 200].map((yOffset) => (
-            <div
-              key={`${xOffset}-${yOffset}`}
-              className="absolute inset-0"
-              style={{
-                transform: `translate(${xOffset}%, ${yOffset}%)`,
-              }}
-            >
-              {renderPoints()}
-            </div>
-          )),
-        )}
+        {/* Renderiza apenas 3 cópias para melhor performance */}
+        <div className="absolute inset-0">{renderPoints()}</div>
+        <div
+          className="absolute inset-0"
+          style={{ transform: "translateX(100%)" }}
+        >
+          {renderPoints()}
+        </div>
+        <div
+          className="absolute inset-0"
+          style={{ transform: "translateX(-100%)" }}
+        >
+          {renderPoints()}
+        </div>
       </motion.div>
 
       {/* Nave do jogador - fixa no centro */}
