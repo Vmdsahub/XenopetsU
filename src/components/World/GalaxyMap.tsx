@@ -474,11 +474,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       style={{ userSelect: "none" }}
     >
       {/* Camada 1 - Estrelas distantes (parallax lento) */}
-      <motion.div
+      <div
         className="absolute inset-0 opacity-60 pointer-events-none"
-        style={{
-          transform: `translate(${mapX.get() * 0.1}px, ${mapY.get() * 0.1}px)`,
-        }}
+        data-star-layer="0"
       >
         {stars
           .filter((star) => star.layer === 0)
@@ -495,14 +493,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               }}
             />
           ))}
-      </motion.div>
+      </div>
 
       {/* Camada 2 - Estrelas médias (parallax médio) */}
-      <motion.div
+      <div
         className="absolute inset-0 opacity-75 pointer-events-none"
-        style={{
-          transform: `translate(${mapX.get() * 0.3}px, ${mapY.get() * 0.3}px)`,
-        }}
+        data-star-layer="1"
       >
         {stars
           .filter((star) => star.layer === 1)
@@ -519,14 +515,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               }}
             />
           ))}
-      </motion.div>
+      </div>
 
       {/* Camada 3 - Estrelas próximas (parallax rápido) */}
-      <motion.div
+      <div
         className="absolute inset-0 opacity-90 pointer-events-none"
-        style={{
-          transform: `translate(${mapX.get() * 0.6}px, ${mapY.get() * 0.6}px)`,
-        }}
+        data-star-layer="2"
       >
         {stars
           .filter((star) => star.layer === 2)
@@ -543,7 +537,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               }}
             />
           ))}
-      </motion.div>
+      </div>
 
       {/* Nebulosas de fundo */}
       <div className="absolute inset-0 pointer-events-none">
