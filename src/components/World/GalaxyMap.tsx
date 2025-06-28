@@ -129,6 +129,9 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const [nearbyPoint, setNearbyPoint] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isColliding, setIsColliding] = useState(false);
+  const [sparks, setSparks] = useState<
+    Array<{ id: number; x: number; y: number; dx: number; dy: number }>
+  >([]);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
