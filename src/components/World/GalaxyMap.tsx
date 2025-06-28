@@ -382,12 +382,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
               if (isColorful) {
                 const gradient = ctx.createRadialGradient(
-                  screenX,
-                  screenY,
+                  animatedX,
+                  animatedY,
                   0,
-                  screenX,
-                  screenY,
-                  size * 2.5,
+                  animatedX,
+                  animatedY,
+                  animatedSize * 2.5,
                 );
                 gradient.addColorStop(0, color);
                 gradient.addColorStop(0.4, color + "77");
@@ -395,14 +395,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
                 ctx.fillStyle = gradient;
 
                 ctx.beginPath();
-                ctx.arc(screenX, screenY, size * 2.5, 0, Math.PI * 2);
+                ctx.arc(
+                  animatedX,
+                  animatedY,
+                  animatedSize * 2.5,
+                  0,
+                  Math.PI * 2,
+                );
                 ctx.fill();
 
                 ctx.fillStyle = color;
               }
 
               ctx.beginPath();
-              ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+              ctx.arc(animatedX, animatedY, animatedSize, 0, Math.PI * 2);
               ctx.fill();
             }
           }
