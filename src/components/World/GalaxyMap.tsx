@@ -142,7 +142,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas otimizado com distribuição uniforme verdadeira
+  // Sistema de estrelas otimizado com arrays tipados - comportamento original
   const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -153,20 +153,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    // RNG determinística melhorada
-    const rng = (seed: number) => {
-      let x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    };
+    // Função para criar estrela com seed determinística - original
+    const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
+      // Use seed para gerar posições consistentes
+      const rng = (s: number) => {
+        let x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+      };
 
-    // Função para criar distribuição uniforme de estrelas
-    const createUniformStars = (
-      count: number,
-      layerType: "bg" | "mid" | "fg",
-      seedOffset: number,
-    ) => {
       const baseConfig = {
         bg: {
+          count: 1000, // Aumentado para o mapa maior
           sizeMin: 0.5,
           sizeMax: 1.0,
           opacityMin: 0.1,
@@ -174,6 +171,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           speed: 0.08,
         },
         mid: {
+          count: 500,
           sizeMin: 0.8,
           sizeMax: 1.5,
           opacityMin: 0.2,
@@ -181,6 +179,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           speed: 0.25,
         },
         fg: {
+          count: 200,
           sizeMin: 1.2,
           sizeMax: 2.2,
           opacityMin: 0.4,
@@ -189,50 +188,34 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         },
       }[layerType];
 
-      const stars = [];
-
-      // Cria uma distribuição mais uniforme usando grid com ruído
-      const gridSize = Math.ceil(Math.sqrt(count));
-      const cellSize = 100 / gridSize; // Dividindo em células de tamanho uniforme
-
-      for (let i = 0; i < count; i++) {
-        const seed = i + seedOffset;
-        const gridX = i % gridSize;
-        const gridY = Math.floor(i / gridSize);
-
-        // Posição base da célula + ruído para naturalidade
-        const baseX = (gridX + rng(seed * 1.1)) * cellSize;
-        const baseY = (gridY + rng(seed * 1.3)) * cellSize;
-
-        // Normaliza para o range do mundo (0-100 representa 0-100% da tela)
-        const x = baseX % 100;
-        const y = baseY % 100;
-
-        stars.push({
-          x, // Coordenadas normalizadas de 0-100
-          y,
-          size:
-            baseConfig.sizeMin +
-            rng(seed * 1.7) * (baseConfig.sizeMax - baseConfig.sizeMin),
-          opacity:
-            baseConfig.opacityMin +
-            rng(seed * 1.9) * (baseConfig.opacityMax - baseConfig.opacityMin),
-          color:
-            layerType === "fg" && rng(seed * 2.1) > 0.6
-              ? colors[Math.floor(rng(seed * 2.3) * colors.length)]
-              : "#ffffff",
-          speed: baseConfig.speed,
-          isColorful: layerType === "fg" && rng(seed * 2.1) > 0.6,
-        });
-      }
-
-      return stars;
+      return {
+        x: rng(seed * 1.1) * WORLD_CONFIG.width,
+        y: rng(seed * 1.3) * WORLD_CONFIG.height,
+        size:
+          baseConfig.sizeMin +
+          rng(seed * 1.7) * (baseConfig.sizeMax - baseConfig.sizeMin),
+        opacity:
+          baseConfig.opacityMin +
+          rng(seed * 1.9) * (baseConfig.opacityMax - baseConfig.opacityMin),
+        color:
+          layerType === "fg" && rng(seed * 2.1) > 0.6
+            ? colors[Math.floor(rng(seed * 2.3) * colors.length)]
+            : "#ffffff",
+        speed: baseConfig.speed,
+        isColorful: layerType === "fg" && rng(seed * 2.1) > 0.6,
+      };
     };
 
     return {
-      background: createUniformStars(1000, "bg", 1000), // Aumentado para cobrir mapa maior
-      middle: createUniformStars(500, "mid", 2000),
-      foreground: createUniformStars(200, "fg", 3000),
+      background: Array.from({ length: 1000 }, (_, i) =>
+        createStar(i + 1000, "bg"),
+      ),
+      middle: Array.from({ length: 500 }, (_, i) =>
+        createStar(i + 2000, "mid"),
+      ),
+      foreground: Array.from({ length: 200 }, (_, i) =>
+        createStar(i + 3000, "fg"),
+      ),
     };
   }, []);
 
