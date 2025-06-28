@@ -127,6 +127,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const mapY = useMotionValue(0);
   const shipRotation = useMotionValue(0);
 
+  // Sistema de rotação suave
+  const targetRotation = useRef(0);
+  const lastRotationUpdate = useRef(0);
+
   // Estados para momentum/inércia
   const [velocity, setVelocity] = useState({ x: 0, y: 0 });
   const [isDecelerating, setIsDecelerating] = useState(false);
@@ -187,6 +191,41 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   useEffect(() => {
     velocityRef.current = velocity;
   }, [velocity]);
+
+  // Sistema de rotação suave com interpolação contínua
+  useEffect(() => {
+    let animationId: number;
+
+    const smoothRotation = () => {
+      const currentAngle = shipRotation.get();
+      const target = targetRotation.current;
+
+      // Normaliza ângulos
+      let normalizedCurrent = ((currentAngle % 360) + 360) % 360;
+      let normalizedTarget = ((target % 360) + 360) % 360;
+
+      // Calcula diferença angular pelo caminho mais curto
+      let diff = normalizedTarget - normalizedCurrent;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+
+      // Interpolação suave mas responsiva
+      const lerpFactor = 0.15; // Ajuste para responsividade vs suavidade
+      const newAngle = currentAngle + diff * lerpFactor;
+
+      shipRotation.set(newAngle);
+
+      animationId = requestAnimationFrame(smoothRotation);
+    };
+
+    animationId = requestAnimationFrame(smoothRotation);
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [shipRotation]);
 
   // Sistema de momentum mais suave usando interpolação
   useEffect(() => {
@@ -339,27 +378,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     mapX.set(newMapX);
     mapY.set(newMapY);
 
-    // Rotação fluida e responsiva
+    // Rotação responsiva com interpolação suave
     if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
       setHasMoved(true);
       const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-      const currentAngle = shipRotation.get();
-
-      // Normaliza ângulos para evitar saltos visuais
-      let normalizedNew = ((newAngle % 360) + 360) % 360;
-      let normalizedCurrent = ((currentAngle % 360) + 360) % 360;
-
-      // Calcula a diferença usando o caminho mais curto
-      let diff = normalizedNew - normalizedCurrent;
-      if (diff > 180) diff -= 360;
-      if (diff < -180) diff += 360;
-
-      // Aplica rotação suave mas responsiva
-      const targetAngle = currentAngle + diff;
-      animate(shipRotation, targetAngle, {
-        duration: 0.08,
-        ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart para suavidade
-      });
+      targetRotation.current = newAngle;
+      lastRotationUpdate.current = Date.now();
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -428,23 +452,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
         setHasMoved(true);
         const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-        const currentAngle = shipRotation.get();
-
-        // Normaliza ângulos para evitar saltos visuais
-        let normalizedNew = ((newAngle % 360) + 360) % 360;
-        let normalizedCurrent = ((currentAngle % 360) + 360) % 360;
-
-        // Calcula a diferença usando o caminho mais curto
-        let diff = normalizedNew - normalizedCurrent;
-        if (diff > 180) diff -= 360;
-        if (diff < -180) diff += 360;
-
-        // Aplica rotação suave mas responsiva
-        const targetAngle = currentAngle + diff;
-        animate(shipRotation, targetAngle, {
-          duration: 0.08,
-          ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart para suavidade
-        });
+        targetRotation.current = newAngle;
+        lastRotationUpdate.current = Date.now();
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
