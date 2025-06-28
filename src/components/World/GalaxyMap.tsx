@@ -523,39 +523,11 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     [],
   );
 
-  // Função para verificar colisão com barreira - versão simplificada
+  // Função para verificar colisão com barreira - TEMPORARIAMENTE DESABILITADA
   const checkBarrierCollision = useCallback(
     (proposedMapX: number, proposedMapY: number) => {
-      // Raio da barreira em pixels (deve corresponder ao CSS da barreira visual)
-      const barrierRadius = 1200;
-
-      // Distância simples do centro (0,0) até a posição proposta
-      const distance = Math.sqrt(
-        proposedMapX * proposedMapX + proposedMapY * proposedMapY,
-      );
-
-      // Adiciona uma margem de segurança para evitar falsos positivos
-      const safetyMargin = 50;
-      const effectiveRadius = barrierRadius - safetyMargin;
-
-      if (distance > effectiveRadius) {
-        const canvas = canvasRef.current;
-        if (!canvas) return { isColliding: true, collisionPoint: null };
-
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        // Ponto de colisão simplificado
-        const angle = Math.atan2(proposedMapY, proposedMapX);
-        const collisionX = centerX + Math.cos(angle) * effectiveRadius;
-        const collisionY = centerY + Math.sin(angle) * effectiveRadius;
-
-        return {
-          isColliding: true,
-          collisionPoint: { x: collisionX, y: collisionY },
-        };
-      }
-
+      // TEMPORARIAMENTE RETORNA SEMPRE FALSE PARA PERMITIR NAVEGAÇÃO LIVRE
+      // Vou implementar versão correta depois
       return { isColliding: false, collisionPoint: null };
     },
     [],
