@@ -230,7 +230,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Renderização sem qualquer sistema de wrap em grade
+  // Geração dinâmica de estrelas baseada na posição da câmera
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -245,86 +245,122 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
-    // Função para renderizar uma camada de estrelas
-    const renderLayer = (stars: typeof starData.background, speed: number) => {
-      stars.forEach((star) => {
-        // Aplicar parallax
-        const offsetX = currentMapX * speed;
-        const offsetY = currentMapY * speed;
+    const colors = [
+      "#60A5FA",
+      "#F87171",
+      "#34D399",
+      "#FBBF24",
+      "#A78BFA",
+      "#FB7185",
+    ];
 
-        // Converter coordenadas do mundo das estrelas para pixel do canvas
-        // Escala: 1 unidade do mundo das estrelas = 0.05 pixels
-        const scale = 0.05;
-        let x = star.x * scale + canvasWidth / 2 + offsetX;
-        let y = star.y * scale + canvasHeight / 2 + offsetY;
-
-        // Wrap toroidal simples para repetir o padrão infinitamente
-        // Mas sem criar grades - apenas modulo direto
-        const wrapSize = 2000; // Tamanho do padrão que se repete
-        x = ((x % wrapSize) + wrapSize) % wrapSize;
-        y = ((y % wrapSize) + wrapSize) % wrapSize;
-
-        // Se a estrela wrap para fora da tela, cria cópias nas bordas
-        const positions = [
-          { x, y },
-          { x: x - wrapSize, y },
-          { x: x + wrapSize, y },
-          { x, y: y - wrapSize },
-          { x, y: y + wrapSize },
-          { x: x - wrapSize, y: y - wrapSize },
-          { x: x + wrapSize, y: y - wrapSize },
-          { x: x - wrapSize, y: y + wrapSize },
-          { x: x + wrapSize, y: y + wrapSize },
-        ];
-
-        positions.forEach((pos) => {
-          // Culling
-          if (
-            pos.x < -star.size * 2 ||
-            pos.x > canvasWidth + star.size * 2 ||
-            pos.y < -star.size * 2 ||
-            pos.y > canvasHeight + star.size * 2
-          ) {
-            return;
-          }
-
-          ctx.globalAlpha = star.opacity;
-          ctx.fillStyle = star.color;
-
-          if (star.isColorful) {
-            const gradient = ctx.createRadialGradient(
-              pos.x,
-              pos.y,
-              0,
-              pos.x,
-              pos.y,
-              star.size * 2.5,
-            );
-            gradient.addColorStop(0, star.color);
-            gradient.addColorStop(0.4, star.color + "88");
-            gradient.addColorStop(1, star.color + "00");
-            ctx.fillStyle = gradient;
-
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, star.size * 2.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = star.color;
-          }
-
-          ctx.beginPath();
-          ctx.arc(pos.x, pos.y, star.size, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      });
+    // Função hash determinística
+    const hash = (x: number, y: number, seed: number = 0) => {
+      let h = 1779033703 ^ seed;
+      h = Math.imul(h ^ x, 3432918353);
+      h = (h << 13) | (h >>> 19);
+      h = Math.imul(h ^ y, 461845907);
+      h = (h << 13) | (h >>> 19);
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      return (h ^= h >>> 16) >>> 0;
     };
 
-    renderLayer(starData.background, 0.08);
-    renderLayer(starData.middle, 0.25);
-    renderLayer(starData.foreground, 0.5);
+    // Função para gerar estrelas dinamicamente
+    const generateStarsForRegion = (
+      centerX: number,
+      centerY: number,
+      density: number,
+      speed: number,
+      layerSeed: number,
+    ) => {
+      const regionSize = 100; // Tamanho da região em pixels
+      const regionStartX = Math.floor(centerX / regionSize) * regionSize;
+      const regionStartY = Math.floor(centerY / regionSize) * regionSize;
+
+      // Gera estrelas para uma grade 3x3 de regiões ao redor do centro
+      for (let rx = -1; rx <= 1; rx++) {
+        for (let ry = -1; ry <= 1; ry++) {
+          const regX = regionStartX + rx * regionSize;
+          const regY = regionStartY + ry * regionSize;
+
+          // Número de estrelas nesta região baseado no hash
+          const regionHash = hash(regX, regY, layerSeed);
+          const numStars = Math.floor(((regionHash % 100) / 100) * density);
+
+          for (let i = 0; i < numStars; i++) {
+            const starHash = hash(regX, regY, layerSeed + i * 1000);
+
+            // Posição dentro da região
+            const localX = ((starHash % 10000) / 10000) * regionSize;
+            const localY = (((starHash >> 16) % 10000) / 10000) * regionSize;
+
+            const x = regX + localX;
+            const y = regY + localY;
+
+            // Propriedades da estrela
+            const starHash2 = hash(x, y, layerSeed + 999);
+            const size = 0.3 + ((starHash2 % 1000) / 1000) * 1.5;
+            const opacity = 0.1 + (((starHash2 >> 10) % 1000) / 1000) * 0.7;
+            const isColorful = (starHash2 >> 20) % 100 < 10; // 10% coloridas
+            const colorIndex = (starHash2 >> 25) % colors.length;
+
+            // Só renderiza se estiver visível
+            if (
+              x >= -size &&
+              x <= canvasWidth + size &&
+              y >= -size &&
+              y <= canvasHeight + size
+            ) {
+              ctx.globalAlpha = opacity;
+              const color = isColorful ? colors[colorIndex] : "#ffffff";
+              ctx.fillStyle = color;
+
+              if (isColorful) {
+                const gradient = ctx.createRadialGradient(
+                  x,
+                  y,
+                  0,
+                  x,
+                  y,
+                  size * 2,
+                );
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(0.5, color + "66");
+                gradient.addColorStop(1, color + "00");
+                ctx.fillStyle = gradient;
+
+                ctx.beginPath();
+                ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = color;
+              }
+
+              ctx.beginPath();
+              ctx.arc(x, y, size, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+      }
+    };
+
+    // Renderiza as camadas com diferentes parallax
+    const bgCenterX = canvasWidth / 2 - currentMapX * 0.08;
+    const bgCenterY = canvasHeight / 2 - currentMapY * 0.08;
+    generateStarsForRegion(bgCenterX, bgCenterY, 15, 0.08, 1000);
+
+    const midCenterX = canvasWidth / 2 - currentMapX * 0.25;
+    const midCenterY = canvasHeight / 2 - currentMapY * 0.25;
+    generateStarsForRegion(midCenterX, midCenterY, 8, 0.25, 2000);
+
+    const fgCenterX = canvasWidth / 2 - currentMapX * 0.5;
+    const fgCenterY = canvasHeight / 2 - currentMapY * 0.5;
+    generateStarsForRegion(fgCenterX, fgCenterY, 4, 0.5, 3000);
 
     ctx.globalAlpha = 1;
-  }, [starData, mapX, mapY]);
+  }, [mapX, mapY]);
 
   // Sistema de animação otimizado para Canvas
   useEffect(() => {
