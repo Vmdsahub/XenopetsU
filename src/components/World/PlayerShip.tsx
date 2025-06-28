@@ -35,9 +35,6 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
         src="https://cdn.builder.io/api/v1/image/assets%2F4d288afc418148aaaf0f73eedbc53e2b%2F01991177d397420f9f7b55d6a6283724?format=webp&width=800"
         alt="Spaceship"
         className="w-full h-full object-contain drop-shadow-lg"
-        animate={{
-          filter: "drop-shadow(0 0 4px rgba(59, 130, 246, 0.5))",
-        }}
       />
 
       {/* Ship trails - apenas quando arrastando */}
