@@ -133,14 +133,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const velocityRef = useRef({ x: 0, y: 0 });
   const lastMoveTime = useRef(Date.now());
 
-  // Estrelas fixas
+  // Estrelas fixas - mais estrelas para preencher todo o mapa
   const stars = useMemo(() => {
-    return Array.from({ length: 150 }, (_, i) => ({
+    return Array.from({ length: 400 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
       animationDelay: Math.random() * 3,
       animationDuration: 2 + Math.random() * 2,
+      size: 0.5 + Math.random() * 1.5, // Tamanhos variados
+      layer: Math.floor(Math.random() * 3), // 3 camadas para parallax
     }));
   }, []);
 
