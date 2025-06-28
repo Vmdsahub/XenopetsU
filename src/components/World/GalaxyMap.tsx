@@ -292,15 +292,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
         // Renderiza múltiplas cópias para garantir cobertura completa nas bordas
         const renderPositions = [
-          { x: wrappedX, y: wrappedY },
-          { x: wrappedX - baseTileWidth, y: wrappedY },
-          { x: wrappedX + baseTileWidth, y: wrappedY },
-          { x: wrappedX, y: wrappedY - baseTileHeight },
-          { x: wrappedX, y: wrappedY + baseTileHeight },
-          { x: wrappedX - baseTileWidth, y: wrappedY - baseTileHeight },
-          { x: wrappedX + baseTileWidth, y: wrappedY - baseTileHeight },
-          { x: wrappedX - baseTileWidth, y: wrappedY + baseTileHeight },
-          { x: wrappedX + baseTileWidth, y: wrappedY + baseTileHeight },
+          { x: canvasX, y: canvasY },
+          { x: canvasX - canvasWidth, y: canvasY },
+          { x: canvasX + canvasWidth, y: canvasY },
+          { x: canvasX, y: canvasY - canvasHeight },
+          { x: canvasX, y: canvasY + canvasHeight },
+          { x: canvasX - canvasWidth, y: canvasY - canvasHeight },
+          { x: canvasX + canvasWidth, y: canvasY - canvasHeight },
+          { x: canvasX - canvasWidth, y: canvasY + canvasHeight },
+          { x: canvasX + canvasWidth, y: canvasY + canvasHeight },
         ];
 
         renderPositions.forEach(({ x, y }) => {
