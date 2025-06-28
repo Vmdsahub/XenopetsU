@@ -20,10 +20,12 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
   useEffect(() => {
     if (isDragging) {
       setShowTrail(true);
+      startEngineSound();
     } else {
       const timeout = setTimeout(() => {
         setShowTrail(false);
       }, 200);
+      stopEngineSound();
       return () => clearTimeout(timeout);
     }
   }, [isDragging]);
