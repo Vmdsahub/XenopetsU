@@ -127,6 +127,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
   const [nearbyPoint, setNearbyPoint] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isColliding, setIsColliding] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -239,7 +240,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Geração dinâmica de estrelas baseada na posição da câmera
+  // Geraç��o dinâmica de estrelas baseada na posição da câmera
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
