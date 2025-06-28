@@ -161,6 +161,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
+  // Dimensões do canvas para as estrelas cadentes
+  const [canvasDimensions, setCanvasDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
+
   // Sistema de estrelas corrigido para escala -5000 a +5000
   const starData = useMemo(() => {
     const colors = [
