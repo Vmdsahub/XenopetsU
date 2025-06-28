@@ -523,30 +523,32 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     [],
   );
 
-  // Função para verificar colisão com barreira - versão correta
+  // Função para verificar colisão com barreira - versão robusta
   const checkBarrierCollision = useCallback(
     (proposedMapX: number, proposedMapY: number) => {
-      // A barreira circular tem raio de 1200px, centrada em (0,0)
-      // Coordenadas do mapa vão de -1200 a +1200 em X e Y
+      // Limites da barreira: de -1200 a +1200 em X e Y (raio 1200px)
       const barrierRadius = 1200;
 
-      // Calcula distância do centro (0,0) do mundo
+      // Calcula a distância absoluta do centro usando a fórmula euclidiana
       const distanceFromCenter = Math.sqrt(
         proposedMapX * proposedMapX + proposedMapY * proposedMapY,
       );
 
-      // Verifica se ultrapassou o raio da barreira
-      if (distanceFromCenter > barrierRadius) {
+      // Só considera colisão se estiver claramente fora da barreira
+      // Adiciona uma margem mínima para evitar falsos positivos
+      const effectiveRadius = barrierRadius - 5; // Margem de 5px para suavizar
+
+      if (distanceFromCenter >= effectiveRadius) {
         const canvas = canvasRef.current;
         if (!canvas) return { isColliding: true, collisionPoint: null };
 
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
-        // Calcula ponto de colisão na borda da barreira
+        // Calcula o ângulo e ponto de colisão
         const angle = Math.atan2(proposedMapY, proposedMapX);
-        const collisionX = centerX + Math.cos(angle) * barrierRadius;
-        const collisionY = centerY + Math.sin(angle) * barrierRadius;
+        const collisionX = centerX + Math.cos(angle) * effectiveRadius;
+        const collisionY = centerY + Math.sin(angle) * effectiveRadius;
 
         return {
           isColliding: true,
