@@ -328,26 +328,56 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               const opacityHash = hash(worldX * 1.7, worldY * 1.9, layer);
               const colorHash = hash(worldX * 2.1, worldY * 2.3, layer);
 
-              const size =
+              // Hash para animações únicas de cada estrela
+              const animationSeed = hash(worldX * 3.7, worldY * 4.1, layer);
+              const animationSeed2 = hash(worldX * 5.3, worldY * 6.7, layer);
+
+              const baseSize =
                 layer === 1
                   ? 0.3 + sizeHash * 0.5
                   : layer === 2
                     ? 0.6 + sizeHash * 0.6
                     : 1.0 + sizeHash * 1.0;
 
-              const opacity =
+              const baseOpacity =
                 layer === 1
                   ? 0.1 + opacityHash * 0.3
                   : layer === 2
                     ? 0.2 + opacityHash * 0.4
                     : 0.4 + opacityHash * 0.5;
 
+              // Animação de piscar - diferentes frequências para cada estrela
+              const blinkSpeed = 0.5 + animationSeed * 1.5; // Velocidade entre 0.5 e 2.0
+              const blinkPhase = animationSeed * Math.PI * 2; // Fase inicial aleatória
+              const blinkIntensity = 0.3 + animationSeed2 * 0.4; // Intensidade entre 0.3 e 0.7
+              const blinkFactor =
+                1 +
+                Math.sin(currentTime * blinkSpeed + blinkPhase) *
+                  blinkIntensity;
+
+              // Animação de movimento flutuante
+              const floatSpeedX = (animationSeed - 0.5) * 0.8; // Velocidade entre -0.4 e 0.4
+              const floatSpeedY = (animationSeed2 - 0.5) * 0.6; // Velocidade entre -0.3 e 0.3
+              const floatPhaseX = animationSeed * Math.PI * 4;
+              const floatPhaseY = animationSeed2 * Math.PI * 4;
+              const floatRange = layer === 1 ? 0.3 : layer === 2 ? 0.5 : 0.8; // Movimento maior para estrelas maiores
+
+              const floatOffsetX =
+                Math.sin(currentTime * floatSpeedX + floatPhaseX) * floatRange;
+              const floatOffsetY =
+                Math.cos(currentTime * floatSpeedY + floatPhaseY) * floatRange;
+
+              const animatedSize = baseSize * blinkFactor;
+              const animatedOpacity = Math.min(1, baseOpacity * blinkFactor);
+              const animatedX = screenX + floatOffsetX;
+              const animatedY = screenY + floatOffsetY;
+
               const isColorful = layer === 3 && colorHash > 0.8;
               const color = isColorful
                 ? colors[Math.floor(colorHash * colors.length)]
                 : "#ffffff";
 
-              ctx.globalAlpha = opacity;
+              ctx.globalAlpha = animatedOpacity;
               ctx.fillStyle = color;
 
               if (isColorful) {
