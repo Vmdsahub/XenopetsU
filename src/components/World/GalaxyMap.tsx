@@ -243,7 +243,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Função de renderização Canvas otimizada - comportamento original
+  // Função de renderização Canvas otimizada com melhor distribuição
   const renderStarsCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -259,38 +259,39 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
 
-    // Função para renderizar camada de estrelas - comportamento original
+    // Função para renderizar camada de estrelas com distribuição melhorada
     const renderLayer = (stars: typeof starData.background, speed: number) => {
       stars.forEach((star) => {
         // Calcula posição com parallax
         const parallaxX = currentMapX * speed;
         const parallaxY = currentMapY * speed;
 
-        // Converte coordenadas do mundo para canvas
-        const worldToCanvasScale = canvasWidth / (WORLD_CONFIG.width * 3); // 300% width
-        let x = (star.x / WORLD_CONFIG.width) * canvasWidth + parallaxX;
-        let y = (star.y / WORLD_CONFIG.height) * canvasHeight + parallaxY;
+        // Escala melhorada para distribuição expandida
+        const expansionFactor = 4; // Correspondente ao createStar
+        const worldWidth = WORLD_CONFIG.width * expansionFactor;
+        const worldHeight = WORLD_CONFIG.height * expansionFactor;
 
-        // Renderiza múltiplas cópias para efeito wrap seamless
-        for (
-          let offsetX = -canvasWidth;
-          offsetX <= canvasWidth;
-          offsetX += canvasWidth
-        ) {
-          for (
-            let offsetY = -canvasHeight;
-            offsetY <= canvasHeight;
-            offsetY += canvasHeight
-          ) {
-            const finalX = x + offsetX;
-            const finalY = y + offsetY;
+        // Converte coordenadas do mundo expandido para canvas
+        let x = (star.x / worldWidth) * canvasWidth + parallaxX;
+        let y = (star.y / worldHeight) * canvasHeight + parallaxY;
 
-            // Culling - só renderiza se estiver visível
+        // Sistema de wrap melhorado para cobrir melhor a área
+        const tileSize = Math.max(canvasWidth, canvasHeight) * 1.5;
+        const tilesX = Math.ceil((canvasWidth * 3) / tileSize) + 2;
+        const tilesY = Math.ceil((canvasHeight * 3) / tileSize) + 2;
+
+        for (let tileX = -tilesX; tileX <= tilesX; tileX++) {
+          for (let tileY = -tilesY; tileY <= tilesY; tileY++) {
+            const finalX = x + tileX * tileSize;
+            const finalY = y + tileY * tileSize;
+
+            // Culling otimizado
+            const margin = star.size * 3;
             if (
-              finalX < -star.size ||
-              finalX > canvasWidth + star.size ||
-              finalY < -star.size ||
-              finalY > canvasHeight + star.size
+              finalX < -margin ||
+              finalX > canvasWidth + margin ||
+              finalY < -margin ||
+              finalY > canvasHeight + margin
             ) {
               continue;
             }
@@ -300,22 +301,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             ctx.fillStyle = star.color;
 
             if (star.isColorful) {
-              // Estrelas coloridas com glow
+              // Estrelas coloridas com glow suavizado
               const gradient = ctx.createRadialGradient(
                 finalX,
                 finalY,
                 0,
                 finalX,
                 finalY,
-                star.size * 2,
+                star.size * 2.5,
               );
               gradient.addColorStop(0, star.color);
-              gradient.addColorStop(0.5, star.color + "88");
+              gradient.addColorStop(0.4, star.color + "66");
               gradient.addColorStop(1, star.color + "00");
               ctx.fillStyle = gradient;
 
               ctx.beginPath();
-              ctx.arc(finalX, finalY, star.size * 2, 0, Math.PI * 2);
+              ctx.arc(finalX, finalY, star.size * 2.5, 0, Math.PI * 2);
               ctx.fill();
 
               // Centro mais brilhante
