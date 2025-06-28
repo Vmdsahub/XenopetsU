@@ -540,10 +540,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       setVelocity({ x: velX, y: velY });
     }
 
-    // Atualiza posição da nave
-    const newX = wrap(shipPosRef.current.x - deltaX / 8, 0, WORLD_CONFIG.width);
+    // Atualiza posição da nave de forma mais suave
+    const newX = wrap(
+      shipPosRef.current.x - deltaX / 12,
+      0,
+      WORLD_CONFIG.width,
+    );
     const newY = wrap(
-      shipPosRef.current.y - deltaY / 8,
+      shipPosRef.current.y - deltaY / 12,
       0,
       WORLD_CONFIG.height,
     );
@@ -594,7 +598,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const deltaX = e.clientX - lastMousePos.current.x;
       const deltaY = e.clientY - lastMousePos.current.y;
 
-      // Momentum simples baseado no ��ltimo movimento
+      // Momentum simples baseado no último movimento
       if (deltaTime > 0) {
         const velX = Math.max(-2, Math.min(2, deltaX * 0.1));
         const velY = Math.max(-2, Math.min(2, deltaY * 0.1));
