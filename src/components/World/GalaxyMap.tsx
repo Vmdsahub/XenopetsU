@@ -161,15 +161,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   useEffect(() => {
     if (
       !isDragging &&
-      (Math.abs(velocity.x) > 0.1 || Math.abs(velocity.y) > 0.1)
+      (Math.abs(velocity.x) > 0.05 || Math.abs(velocity.y) > 0.05)
     ) {
       setIsDecelerating(true);
 
       const applyMomentum = () => {
         const currentVel = velocityRef.current;
-        const friction = 0.92; // Fator de desaceleração
+        const friction = 0.85; // Atrito mais forte para desaceleração mais rápida
 
-        if (Math.abs(currentVel.x) < 0.1 && Math.abs(currentVel.y) < 0.1) {
+        // Para quando velocidade fica muito baixa
+        if (Math.abs(currentVel.x) < 0.05 && Math.abs(currentVel.y) < 0.05) {
           setIsDecelerating(false);
           setVelocity({ x: 0, y: 0 });
           return;
@@ -178,23 +179,23 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const newVelX = currentVel.x * friction;
         const newVelY = currentVel.y * friction;
 
-        // Aplica movimento com momentum
+        // Aplica movimento com momentum - movimento mais suave
         const newX = wrap(
-          shipPosRef.current.x - newVelX / 6,
+          shipPosRef.current.x - newVelX / 4,
           0,
           WORLD_CONFIG.width,
         );
         const newY = wrap(
-          shipPosRef.current.y - newVelY / 6,
+          shipPosRef.current.y - newVelY / 4,
           0,
           WORLD_CONFIG.height,
         );
 
         setShipPosition({ x: newX, y: newY });
 
-        // Atualiza mapa visual
-        const newMapX = mapX.get() + newVelX;
-        const newMapY = mapY.get() + newVelY;
+        // Atualiza mapa visual de forma mais suave
+        const newMapX = mapX.get() + newVelX * 0.8;
+        const newMapY = mapY.get() + newVelY * 0.8;
 
         mapX.set(newMapX);
         mapY.set(newMapY);
