@@ -368,6 +368,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
     const handleGlobalMouseUp = () => {
       setIsDragging(false);
+      // Não zera a velocidade aqui - deixa o momentum continuar
       localStorage.setItem(
         "xenopets-player-position",
         JSON.stringify(shipPosRef.current),
