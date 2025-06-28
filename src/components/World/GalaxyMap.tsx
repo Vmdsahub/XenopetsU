@@ -779,7 +779,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const effectiveShipX = centerVisualX - proposedMapX;
         const effectiveShipY = centerVisualY - proposedMapY;
 
-        const barrierRadius = 600;
+        const barrierRadius = 1200; // 2400px de diâmetro = 1200px de raio
         const distanceFromCenter = Math.sqrt(
           Math.pow(effectiveShipX - centerVisualX, 2) +
             Math.pow(effectiveShipY - centerVisualY, 2),
