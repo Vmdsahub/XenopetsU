@@ -504,6 +504,61 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     };
   }, [shipRotation]);
 
+  // Função para criar faíscas de colisão
+  const createCollisionSparks = useCallback(
+    (collisionX: number, collisionY: number) => {
+      const newSparks = Array.from({ length: 8 }, (_, i) => ({
+        id: Date.now() + i,
+        x: collisionX,
+        y: collisionY,
+        dx: (Math.random() - 0.5) * 80,
+        dy: (Math.random() - 0.5) * 80,
+      }));
+
+      setSparks(newSparks);
+
+      // Remove faíscas após animação
+      setTimeout(() => setSparks([]), 600);
+    },
+    [],
+  );
+
+  // Função para verificar colisão com barreira
+  const checkBarrierCollision = useCallback(
+    (proposedMapX: number, proposedMapY: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return { isColliding: false, collisionPoint: null };
+
+      const centerVisualX = canvas.width / 2;
+      const centerVisualY = canvas.height / 2;
+      const effectiveShipX = centerVisualX - proposedMapX;
+      const effectiveShipY = centerVisualY - proposedMapY;
+      const barrierRadius = 1200;
+      const distanceFromCenter = Math.sqrt(
+        Math.pow(effectiveShipX - centerVisualX, 2) +
+          Math.pow(effectiveShipY - centerVisualY, 2),
+      );
+
+      if (distanceFromCenter > barrierRadius) {
+        // Calcula ponto de colisão na barreira
+        const angle = Math.atan2(
+          effectiveShipY - centerVisualY,
+          effectiveShipX - centerVisualX,
+        );
+        const collisionX = centerVisualX + Math.cos(angle) * barrierRadius;
+        const collisionY = centerVisualY + Math.sin(angle) * barrierRadius;
+
+        return {
+          isColliding: true,
+          collisionPoint: { x: collisionX, y: collisionY },
+        };
+      }
+
+      return { isColliding: false, collisionPoint: null };
+    },
+    [],
+  );
+
   // Sistema de momentum mais suave usando interpolação
   useEffect(() => {
     if (
@@ -561,7 +616,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           setIsColliding(true);
           setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
           if (collision.collisionPoint) {
-            createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
+            createCollisionSparks(
+              collision.collisionPoint.x,
+              collision.collisionPoint.y,
+            );
           }
           setIsDecelerating(false);
           setVelocity({ x: 0, y: 0 });
@@ -590,62 +648,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         }
       };
     }
-  }, [isDragging]);
-
-  // Função para criar faíscas de colisão
-  const createCollisionSparks = useCallback(
-    (collisionX: number, collisionY: number) => {
-      const newSparks = Array.from({ length: 8 }, (_, i) => ({
-        id: Date.now() + i,
-        x: collisionX,
-        y: collisionY,
-        dx: (Math.random() - 0.5) * 80,
-        dy: (Math.random() - 0.5) * 80,
-      }));
-
-      setSparks(newSparks);
-
-      // Remove faíscas após animação
-      setTimeout(() => setSparks([]), 400);
-    },
-    [],
-  );
-
-  // Função para verificar colisão com barreira
-  const checkBarrierCollision = useCallback(
-    (proposedMapX: number, proposedMapY: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return { isColliding: false, collisionPoint: null };
-
-      const centerVisualX = canvas.width / 2;
-      const centerVisualY = canvas.height / 2;
-      const effectiveShipX = centerVisualX - proposedMapX;
-      const effectiveShipY = centerVisualY - proposedMapY;
-      const barrierRadius = 1200;
-      const distanceFromCenter = Math.sqrt(
-        Math.pow(effectiveShipX - centerVisualX, 2) +
-          Math.pow(effectiveShipY - centerVisualY, 2),
-      );
-
-      if (distanceFromCenter > barrierRadius) {
-        // Calcula ponto de colisão na barreira
-        const angle = Math.atan2(
-          effectiveShipY - centerVisualY,
-          effectiveShipX - centerVisualX,
-        );
-        const collisionX = centerVisualX + Math.cos(angle) * barrierRadius;
-        const collisionY = centerVisualY + Math.sin(angle) * barrierRadius;
-
-        return {
-          isColliding: true,
-          collisionPoint: { x: collisionX, y: collisionY },
-        };
-      }
-
-      return { isColliding: false, collisionPoint: null };
-    },
-    [],
-  );
+  }, [isDragging, mapX, mapY, checkBarrierCollision, createCollisionSparks]);
 
   // Função para calcular distância toroidal correta
   const getToroidalDistance = (
@@ -742,7 +745,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     let newY = proposedY;
     let allowMovement = true;
 
-    // Calcula posiç��o visual proposta baseada no movimento do mapa
+    // Calcula posição visual proposta baseada no movimento do mapa
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
     const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
@@ -752,7 +755,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
     const collision = checkBarrierCollision(proposedMapX, proposedMapY);
     if (collision.isColliding) {
-      // Ativa flash vermelho, faíscas e som
+      // Ativa flash vermelho e faíscas
       setIsColliding(true);
       setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
       if (collision.collisionPoint) {
@@ -761,7 +764,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           collision.collisionPoint.y,
         );
       }
-      playBarrierCollisionSound().catch(() => {}); // Som não-crítico
       newX = shipPosRef.current.x;
       newY = shipPosRef.current.y;
       allowMovement = false;
@@ -856,20 +858,20 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       const proposedMapX = currentMapX + deltaMapX;
       const proposedMapY = currentMapY + deltaMapY;
 
-    const collision = checkBarrierCollision(proposedMapX, proposedMapY);
-    if (collision.isColliding) {
-      // Ativa flash vermelho e faíscas
-      setIsColliding(true);
-      setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
-      if (collision.collisionPoint) {
-        createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
-      }
-      newX = shipPosRef.current.x;
-      newY = shipPosRef.current.y;
-      allowMovement = false;
-      setVelocity({ x: 0, y: 0 });
-      setIsDecelerating(false);
-    }
+      const collision = checkBarrierCollision(proposedMapX, proposedMapY);
+      if (collision.isColliding) {
+        // Ativa flash vermelho e faíscas
+        setIsColliding(true);
+        setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+        if (collision.collisionPoint) {
+          createCollisionSparks(
+            collision.collisionPoint.x,
+            collision.collisionPoint.y,
+          );
+        }
+        newX = shipPosRef.current.x;
+        newY = shipPosRef.current.y;
+        allowMovement = false;
         setVelocity({ x: 0, y: 0 });
         setIsDecelerating(false);
       }
@@ -928,7 +930,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       document.removeEventListener("mousemove", handleGlobalMouseMove);
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, [isDragging, mapX, mapY, shipRotation]);
+  }, [
+    isDragging,
+    mapX,
+    mapY,
+    shipRotation,
+    checkBarrierCollision,
+    createCollisionSparks,
+  ]);
 
   const resetShipPosition = () => {
     setShipPosition({ x: 50, y: 50 });
@@ -1065,7 +1074,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               style={{
                 left: spark.x - 4, // Centrar a faísca
                 top: spark.y - 4,
-                boxShadow: "0 0 8px rgba(239, 68, 68, 1), 0 0 16px rgba(239, 68, 68, 0.5)",
+                boxShadow:
+                  "0 0 8px rgba(239, 68, 68, 1), 0 0 16px rgba(239, 68, 68, 0.5)",
                 zIndex: 10,
               }}
               initial={{
