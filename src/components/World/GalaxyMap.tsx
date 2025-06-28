@@ -142,7 +142,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Sistema de estrelas otimizado com arrays tipados - comportamento original
+  // Sistema de estrelas otimizado com distribuição melhorada
   const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
@@ -153,67 +153,83 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    // Função para criar estrela com seed determinística - original
+    // Função melhorada para geração pseudo-aleatória com múltiplas sementes
     const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
-      // Use seed para gerar posições consistentes
-      const rng = (s: number) => {
-        let x = Math.sin(s) * 10000;
+      // Múltiplas funções hash para melhor distribuição
+      const hash1 = (s: number) => {
+        let x = Math.sin(s * 12.9898) * 43758.5453;
+        return x - Math.floor(x);
+      };
+
+      const hash2 = (s: number) => {
+        let x = Math.sin(s * 78.233) * 37834.543;
+        return x - Math.floor(x);
+      };
+
+      const hash3 = (s: number) => {
+        let x = Math.sin(s * 23.542) * 12345.678;
         return x - Math.floor(x);
       };
 
       const baseConfig = {
         bg: {
-          count: 1000, // Aumentado para o mapa maior
-          sizeMin: 0.5,
-          sizeMax: 1.0,
+          count: 1500, // Mais estrelas para melhor distribuição
+          sizeMin: 0.3,
+          sizeMax: 0.8,
           opacityMin: 0.1,
-          opacityMax: 0.3,
+          opacityMax: 0.4,
           speed: 0.08,
         },
         mid: {
-          count: 500,
-          sizeMin: 0.8,
-          sizeMax: 1.5,
+          count: 800,
+          sizeMin: 0.6,
+          sizeMax: 1.2,
           opacityMin: 0.2,
-          opacityMax: 0.5,
+          opacityMax: 0.6,
           speed: 0.25,
         },
         fg: {
-          count: 200,
-          sizeMin: 1.2,
-          sizeMax: 2.2,
+          count: 300,
+          sizeMin: 1.0,
+          sizeMax: 2.0,
           opacityMin: 0.4,
-          opacityMax: 0.8,
+          opacityMax: 0.9,
           speed: 0.5,
         },
       }[layerType];
 
+      // Distribuição melhorada considerando o canvas expandido
+      const expansionFactor = 4; // Para cobrir área 400% maior
+      const worldWidth = WORLD_CONFIG.width * expansionFactor;
+      const worldHeight = WORLD_CONFIG.height * expansionFactor;
+
       return {
-        x: rng(seed * 1.1) * WORLD_CONFIG.width,
-        y: rng(seed * 1.3) * WORLD_CONFIG.height,
+        x: hash1(seed * 1.1234) * worldWidth,
+        y: hash2(seed * 2.3456) * worldHeight,
         size:
           baseConfig.sizeMin +
-          rng(seed * 1.7) * (baseConfig.sizeMax - baseConfig.sizeMin),
+          hash3(seed * 3.4567) * (baseConfig.sizeMax - baseConfig.sizeMin),
         opacity:
           baseConfig.opacityMin +
-          rng(seed * 1.9) * (baseConfig.opacityMax - baseConfig.opacityMin),
+          hash1(seed * 4.5678) *
+            (baseConfig.opacityMax - baseConfig.opacityMin),
         color:
-          layerType === "fg" && rng(seed * 2.1) > 0.6
-            ? colors[Math.floor(rng(seed * 2.3) * colors.length)]
+          layerType === "fg" && hash2(seed * 5.6789) > 0.7
+            ? colors[Math.floor(hash3(seed * 6.789) * colors.length)]
             : "#ffffff",
         speed: baseConfig.speed,
-        isColorful: layerType === "fg" && rng(seed * 2.1) > 0.6,
+        isColorful: layerType === "fg" && hash2(seed * 5.6789) > 0.7,
       };
     };
 
     return {
-      background: Array.from({ length: 1000 }, (_, i) =>
+      background: Array.from({ length: 1500 }, (_, i) =>
         createStar(i + 1000, "bg"),
       ),
-      middle: Array.from({ length: 500 }, (_, i) =>
+      middle: Array.from({ length: 800 }, (_, i) =>
         createStar(i + 2000, "mid"),
       ),
-      foreground: Array.from({ length: 200 }, (_, i) =>
+      foreground: Array.from({ length: 300 }, (_, i) =>
         createStar(i + 3000, "fg"),
       ),
     };
