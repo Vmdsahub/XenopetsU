@@ -227,6 +227,138 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
+  // Função de renderização Canvas otimizada
+  const renderStarsCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Limpa canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const currentMapX = mapX.get();
+    const currentMapY = mapY.get();
+
+    // Função para renderizar camada de estrelas
+    const renderLayer = (stars: typeof starData.background, speed: number) => {
+      stars.forEach((star) => {
+        // Calcula posição com parallax
+        const parallaxX = currentMapX * speed;
+        const parallaxY = currentMapY * speed;
+
+        // Converte coordenadas do mundo para canvas
+        const worldToCanvasScale = canvasWidth / (WORLD_CONFIG.width * 3); // 300% width
+        let x = (star.x / WORLD_CONFIG.width) * canvasWidth + parallaxX;
+        let y = (star.y / WORLD_CONFIG.height) * canvasHeight + parallaxY;
+
+        // Renderiza múltiplas cópias para efeito wrap seamless
+        for (
+          let offsetX = -canvasWidth;
+          offsetX <= canvasWidth;
+          offsetX += canvasWidth
+        ) {
+          for (
+            let offsetY = -canvasHeight;
+            offsetY <= canvasHeight;
+            offsetY += canvasHeight
+          ) {
+            const finalX = x + offsetX;
+            const finalY = y + offsetY;
+
+            // Culling - só renderiza se estiver visível
+            if (
+              finalX < -star.size ||
+              finalX > canvasWidth + star.size ||
+              finalY < -star.size ||
+              finalY > canvasHeight + star.size
+            ) {
+              continue;
+            }
+
+            // Renderiza estrela
+            ctx.globalAlpha = star.opacity;
+            ctx.fillStyle = star.color;
+
+            if (star.isColorful) {
+              // Estrelas coloridas com glow
+              const gradient = ctx.createRadialGradient(
+                finalX,
+                finalY,
+                0,
+                finalX,
+                finalY,
+                star.size * 2,
+              );
+              gradient.addColorStop(0, star.color);
+              gradient.addColorStop(0.5, star.color + "88");
+              gradient.addColorStop(1, star.color + "00");
+              ctx.fillStyle = gradient;
+
+              ctx.beginPath();
+              ctx.arc(finalX, finalY, star.size * 2, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Centro mais brilhante
+              ctx.fillStyle = star.color;
+            }
+
+            ctx.beginPath();
+            ctx.arc(finalX, finalY, star.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      });
+    };
+
+    // Renderiza todas as camadas
+    renderLayer(starData.background, starData.background[0]?.speed || 0.08);
+    renderLayer(starData.middle, starData.middle[0]?.speed || 0.25);
+    renderLayer(starData.foreground, starData.foreground[0]?.speed || 0.5);
+
+    ctx.globalAlpha = 1;
+  }, [starData, mapX, mapY]);
+
+  // Sistema de animação otimizado para Canvas
+  useEffect(() => {
+    const animate = () => {
+      renderStarsCanvas();
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [renderStarsCanvas]);
+
+  // Atualiza canvas size quando container muda
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+
+    if (!canvas || !container) return;
+
+    const updateCanvasSize = () => {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    updateCanvasSize();
+
+    const resizeObserver = new ResizeObserver(updateCanvasSize);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   // Sistema de momentum/inércia
   useEffect(() => {
     velocityRef.current = velocity;
