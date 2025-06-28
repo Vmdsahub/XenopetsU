@@ -526,27 +526,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   // Função para verificar colisão com barreira
   const checkBarrierCollision = useCallback(
     (proposedMapX: number, proposedMapY: number) => {
-      // Usar um raio mais conservador para evitar falsos positivos
-      const barrierRadius = 1180; // Um pouco menor que 1200 para dar margem
+      // A barreira tem raio de 1200px no mundo visual
+      const barrierRadius = 1200;
 
-      // Calcular distância do centro (0,0) até a posição proposta do mapa
+      // Calcular distância absoluta do centro usando coordenadas do mapa
+      // Como o mapa se move inversamente à nave, a distância da nave ao centro é |mapX|, |mapY|
       const distanceFromCenter = Math.sqrt(
         proposedMapX * proposedMapX + proposedMapY * proposedMapY,
       );
 
-      // Console log para debug (remover depois)
-      if (distanceFromCenter > 1000) {
-        console.log(
-          "Distância:",
-          distanceFromCenter,
-          "MapX:",
-          proposedMapX,
-          "MapY:",
-          proposedMapY,
-        );
-      }
-
-      if (distanceFromCenter > barrierRadius) {
+      // Só considera colisão se realmente ultrapassar o raio
+      if (distanceFromCenter >= barrierRadius) {
         const canvas = canvasRef.current;
         if (!canvas) return { isColliding: true, collisionPoint: null };
 
@@ -555,8 +545,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
         // Calcula ponto de colisão na barreira
         const angle = Math.atan2(proposedMapY, proposedMapX);
-        const collisionX = centerVisualX + Math.cos(angle) * barrierRadius;
-        const collisionY = centerVisualY + Math.sin(angle) * barrierRadius;
+        const collisionX = centerVisualX - Math.cos(angle) * barrierRadius;
+        const collisionY = centerVisualY - Math.sin(angle) * barrierRadius;
 
         return {
           isColliding: true,
