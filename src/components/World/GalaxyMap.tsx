@@ -8,6 +8,7 @@ import React, {
 import { motion, useMotionValue, animate } from "framer-motion";
 import { PlayerShip } from "./PlayerShip";
 import { MapPoint } from "./MapPoint";
+import { playBarrierCollisionSound } from "../../utils/soundManager";
 
 interface GalaxyMapProps {
   onPointClick: (pointId: string, pointData: any) => void;
@@ -507,18 +508,18 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   // Função para criar faíscas de colisão
   const createCollisionSparks = useCallback(
     (collisionX: number, collisionY: number) => {
-      const newSparks = Array.from({ length: 8 }, (_, i) => ({
+      const newSparks = Array.from({ length: 12 }, (_, i) => ({
         id: Date.now() + i,
         x: collisionX,
         y: collisionY,
-        dx: (Math.random() - 0.5) * 80,
-        dy: (Math.random() - 0.5) * 80,
+        dx: (Math.random() - 0.5) * 120,
+        dy: (Math.random() - 0.5) * 120,
       }));
 
       setSparks(newSparks);
 
       // Remove faíscas após animação
-      setTimeout(() => setSparks([]), 600);
+      setTimeout(() => setSparks([]), 800);
     },
     [],
   );
@@ -616,13 +617,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         if (collision.isColliding) {
           // Ativa flash vermelho e faíscas
           setIsColliding(true);
-          setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+          setTimeout(() => setIsColliding(false), 200); // Flash de 0.2 segundos
           if (collision.collisionPoint) {
             createCollisionSparks(
               collision.collisionPoint.x,
               collision.collisionPoint.y,
             );
           }
+          // Reproduz som de colisão
+          playBarrierCollisionSound();
           setIsDecelerating(false);
           setVelocity({ x: 0, y: 0 });
           return;
@@ -759,13 +762,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     if (collision.isColliding) {
       // Ativa flash vermelho e faíscas
       setIsColliding(true);
-      setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+      setTimeout(() => setIsColliding(false), 200); // Flash de 0.2 segundos
       if (collision.collisionPoint) {
         createCollisionSparks(
           collision.collisionPoint.x,
           collision.collisionPoint.y,
         );
       }
+      // Reproduz som de colisão
+      playBarrierCollisionSound();
       newX = shipPosRef.current.x;
       newY = shipPosRef.current.y;
       allowMovement = false;
@@ -864,13 +869,15 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       if (collision.isColliding) {
         // Ativa flash vermelho e faíscas
         setIsColliding(true);
-        setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
+        setTimeout(() => setIsColliding(false), 200); // Flash de 0.2 segundos
         if (collision.collisionPoint) {
           createCollisionSparks(
             collision.collisionPoint.x,
             collision.collisionPoint.y,
           );
         }
+        // Reproduz som de colisão
+        playBarrierCollisionSound();
         newX = shipPosRef.current.x;
         newY = shipPosRef.current.y;
         allowMovement = false;
@@ -1068,16 +1075,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             }}
           />
 
-          {/* Faíscas de colisão */}
+          {/* Faíscas de colisão melhoradas */}
           {sparks.map((spark) => (
             <motion.div
               key={spark.id}
-              className="absolute w-2 h-2 bg-red-500 rounded-full pointer-events-none"
+              className="absolute w-3 h-3 rounded-full pointer-events-none"
               style={{
-                left: spark.x - 4, // Centrar a faísca
-                top: spark.y - 4,
+                left: spark.x - 6, // Centrar a faísca
+                top: spark.y - 6,
+                background: "radial-gradient(circle, #ff6b35, #f7931e)",
                 boxShadow:
-                  "0 0 8px rgba(239, 68, 68, 1), 0 0 16px rgba(239, 68, 68, 0.5)",
+                  "0 0 12px rgba(255, 107, 53, 1), 0 0 24px rgba(247, 147, 30, 0.8)",
                 zIndex: 10,
               }}
               initial={{
@@ -1093,7 +1101,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
                 scale: 0.1,
               }}
               transition={{
-                duration: 0.6,
+                duration: 0.8,
                 ease: "easeOut",
               }}
             />
