@@ -757,32 +757,45 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         WORLD_CONFIG.height,
       );
 
-      // Verifica colisão com barreira circular
-      const centerX = WORLD_CONFIG.width / 2;
-      const centerY = WORLD_CONFIG.height / 2;
-      const barrierRadius = 25;
+    // Verifica colisão com barreira circular
+    const centerX = WORLD_CONFIG.width / 2; // 100% (centro do mundo)
+    const centerY = WORLD_CONFIG.height / 2; // 100% (centro do mundo)
+    const barrierRadius = 20; // Raio bem restritivo em unidades do mundo
 
-      const distanceFromCenter = Math.sqrt(
-        Math.pow(proposedX - centerX, 2) + Math.pow(proposedY - centerY, 2),
-      );
+    // Calcula distância considerando wrap toroidal
+    const dx = Math.abs(proposedX - centerX);
+    const dy = Math.abs(proposedY - centerY);
+    const wrapDx = Math.min(dx, WORLD_CONFIG.width - dx);
+    const wrapDy = Math.min(dy, WORLD_CONFIG.height - dy);
+    const distanceFromCenter = Math.sqrt(wrapDx * wrapDx + wrapDy * wrapDy);
 
-      let newX = proposedX;
-      let newY = proposedY;
+    let newX = proposedX;
+    let newY = proposedY;
 
-      // Se a nova posição ultrapassar a barreira, limita na borda
-      if (distanceFromCenter > barrierRadius) {
-        const angle = Math.atan2(proposedY - centerY, proposedX - centerX);
-        newX = centerX + Math.cos(angle) * barrierRadius;
-        newY = centerY + Math.sin(angle) * barrierRadius;
+    // Se a nova posição ultrapassar a barreira, limita na borda
+    if (distanceFromCenter > barrierRadius) {
+      // Calcula ângulo considerando wrap
+      let angleDx = proposedX - centerX;
+      let angleDy = proposedY - centerY;
 
-        console.log(
-          "Global collision! Distance:",
-          distanceFromCenter,
-          "Radius:",
-          barrierRadius,
-        );
+      if (Math.abs(angleDx) > WORLD_CONFIG.width / 2) {
+        angleDx = angleDx > 0 ? angleDx - WORLD_CONFIG.width : angleDx + WORLD_CONFIG.width;
+      }
+      if (Math.abs(angleDy) > WORLD_CONFIG.height / 2) {
+        angleDy = angleDy > 0 ? angleDy - WORLD_CONFIG.height : angleDy + WORLD_CONFIG.height;
+      }
 
-        // Para o momentum se bater na barreira
+      const angle = Math.atan2(angleDy, angleDx);
+      newX = centerX + Math.cos(angle) * barrierRadius;
+      newY = centerY + Math.sin(angle) * barrierRadius;
+
+      // Garante que a posição está dentro dos limites do mundo
+      newX = wrap(newX, 0, WORLD_CONFIG.width);
+      newY = wrap(newY, 0, WORLD_CONFIG.height);
+
+      // Para o momentum se bater na barreira
+      setVelocity({ x: 0, y: 0 });
+    }
         setVelocity({ x: 0, y: 0 });
       }
 
@@ -938,7 +951,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           className="absolute pointer-events-none"
           style={{
             left: "50%", // Centro do mundo (100% = WORLD_CONFIG.width)
-            top: "50%", // Centro do mundo (100% = WORLD_CONFIG.height)
+            top: "50%",  // Centro do mundo (100% = WORLD_CONFIG.height)
             width: "1000px", // Diâmetro menor para corresponder ao raio de colisão
             height: "1000px",
             transform: "translate(-50%, -50%)",
