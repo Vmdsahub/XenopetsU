@@ -553,90 +553,106 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Fundo de estrelas com parallax */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Fundo de estrelas com parallax cobrindo área virtual */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Camada de fundo - movimento mais lento */}
         <motion.div
-          className="absolute inset-0"
+          className="absolute w-[300%] h-[300%] -left-full -top-full"
           style={{
             x: mapX.get() * starLayers.background[0]?.speed || 0,
             y: mapY.get() * starLayers.background[0]?.speed || 0,
           }}
         >
-          {starLayers.background.map((star) => (
-            <div
-              key={`bg-${star.id}`}
-              className="absolute rounded-full"
-              style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                backgroundColor: star.color,
-                opacity: star.opacity,
-                boxShadow:
-                  star.color !== "#ffffff"
-                    ? `0 0 ${star.size * 2}px ${star.color}`
-                    : "none",
-              }}
-            />
-          ))}
+          {starLayers.background.map((star) => {
+            // Converte coordenadas virtuais para posição visual
+            const visualX = (star.x / WORLD_CONFIG.width) * 300;
+            const visualY = (star.y / WORLD_CONFIG.height) * 300;
+
+            return (
+              <div
+                key={`bg-${star.id}`}
+                className="absolute rounded-full"
+                style={{
+                  left: `${visualX}%`,
+                  top: `${visualY}%`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  backgroundColor: star.color,
+                  opacity: star.opacity,
+                  boxShadow:
+                    star.color !== "#ffffff"
+                      ? `0 0 ${star.size * 2}px ${star.color}`
+                      : "none",
+                }}
+              />
+            );
+          })}
         </motion.div>
 
         {/* Camada média */}
         <motion.div
-          className="absolute inset-0"
+          className="absolute w-[300%] h-[300%] -left-full -top-full"
           style={{
             x: mapX.get() * starLayers.middle[0]?.speed || 0,
             y: mapY.get() * starLayers.middle[0]?.speed || 0,
           }}
         >
-          {starLayers.middle.map((star) => (
-            <div
-              key={`mid-${star.id}`}
-              className="absolute rounded-full"
-              style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                backgroundColor: star.color,
-                opacity: star.opacity,
-                boxShadow:
-                  star.color !== "#ffffff"
-                    ? `0 0 ${star.size * 2}px ${star.color}`
-                    : "none",
-              }}
-            />
-          ))}
+          {starLayers.middle.map((star) => {
+            const visualX = (star.x / WORLD_CONFIG.width) * 300;
+            const visualY = (star.y / WORLD_CONFIG.height) * 300;
+
+            return (
+              <div
+                key={`mid-${star.id}`}
+                className="absolute rounded-full"
+                style={{
+                  left: `${visualX}%`,
+                  top: `${visualY}%`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  backgroundColor: star.color,
+                  opacity: star.opacity,
+                  boxShadow:
+                    star.color !== "#ffffff"
+                      ? `0 0 ${star.size * 2}px ${star.color}`
+                      : "none",
+                }}
+              />
+            );
+          })}
         </motion.div>
 
         {/* Camada frontal com estrelas coloridas */}
         <motion.div
-          className="absolute inset-0"
+          className="absolute w-[300%] h-[300%] -left-full -top-full"
           style={{
             x: mapX.get() * starLayers.foreground[0]?.speed || 0,
             y: mapY.get() * starLayers.foreground[0]?.speed || 0,
           }}
         >
-          {starLayers.foreground.map((star) => (
-            <div
-              key={`fg-${star.id}`}
-              className="absolute rounded-full"
-              style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                backgroundColor: star.color,
-                opacity: star.opacity,
-                boxShadow:
-                  star.color !== "#ffffff"
-                    ? `0 0 ${star.size * 3}px ${star.color}66`
-                    : "none",
-              }}
-            />
-          ))}
+          {starLayers.foreground.map((star) => {
+            const visualX = (star.x / WORLD_CONFIG.width) * 300;
+            const visualY = (star.y / WORLD_CONFIG.height) * 300;
+
+            return (
+              <div
+                key={`fg-${star.id}`}
+                className="absolute rounded-full"
+                style={{
+                  left: `${visualX}%`,
+                  top: `${visualY}%`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  backgroundColor: star.color,
+                  opacity: star.opacity,
+                  boxShadow:
+                    star.color !== "#ffffff"
+                      ? `0 0 ${star.size * 3}px ${star.color}66`
+                      : "none",
+                }}
+              />
+            );
+          })}
         </motion.div>
       </div>
 
