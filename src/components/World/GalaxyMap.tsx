@@ -138,8 +138,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const lastMoveTime = useRef(Date.now());
   const [hasMoved, setHasMoved] = useState(false);
 
-  // Sistema de estrelas com parallax cobrindo área virtual 200x200
-  const starLayers = useMemo(() => {
+  // Canvas ref para estrelas
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
+
+  // Sistema de estrelas otimizado com arrays tipados
+  const starData = useMemo(() => {
     const colors = [
       "#60A5FA",
       "#F87171",
@@ -149,42 +153,69 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       "#FB7185",
     ];
 
-    return {
-      // Camada de fundo - mais densa
-      background: Array.from({ length: 800 }, (_, i) => ({
-        id: i,
-        x: Math.random() * WORLD_CONFIG.width,
-        y: Math.random() * WORLD_CONFIG.height,
-        size: 0.5 + Math.random() * 0.8,
-        opacity: 0.15 + Math.random() * 0.3,
-        color: "#ffffff",
-        speed: 0.1,
-      })),
+    // Função para criar estrela com seed determinística
+    const createStar = (seed: number, layerType: "bg" | "mid" | "fg") => {
+      // Use seed para gerar posições consistentes
+      const rng = (s: number) => {
+        let x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+      };
 
-      // Camada média - mais densa
-      middle: Array.from({ length: 400 }, (_, i) => ({
-        id: i,
-        x: Math.random() * WORLD_CONFIG.width,
-        y: Math.random() * WORLD_CONFIG.height,
-        size: 0.8 + Math.random() * 1.2,
-        opacity: 0.3 + Math.random() * 0.4,
-        color: "#ffffff",
-        speed: 0.3,
-      })),
+      const baseConfig = {
+        bg: {
+          count: 400,
+          sizeMin: 0.5,
+          sizeMax: 1.0,
+          opacityMin: 0.1,
+          opacityMax: 0.3,
+          speed: 0.08,
+        },
+        mid: {
+          count: 200,
+          sizeMin: 0.8,
+          sizeMax: 1.5,
+          opacityMin: 0.2,
+          opacityMax: 0.5,
+          speed: 0.25,
+        },
+        fg: {
+          count: 80,
+          sizeMin: 1.2,
+          sizeMax: 2.2,
+          opacityMin: 0.4,
+          opacityMax: 0.8,
+          speed: 0.5,
+        },
+      }[layerType];
 
-      // Camada frontal com mais estrelas coloridas
-      foreground: Array.from({ length: 120 }, (_, i) => ({
-        id: i,
-        x: Math.random() * WORLD_CONFIG.width,
-        y: Math.random() * WORLD_CONFIG.height,
-        size: 1 + Math.random() * 1.8,
-        opacity: 0.5 + Math.random() * 0.5,
+      return {
+        x: rng(seed * 1.1) * WORLD_CONFIG.width,
+        y: rng(seed * 1.3) * WORLD_CONFIG.height,
+        size:
+          baseConfig.sizeMin +
+          rng(seed * 1.7) * (baseConfig.sizeMax - baseConfig.sizeMin),
+        opacity:
+          baseConfig.opacityMin +
+          rng(seed * 1.9) * (baseConfig.opacityMax - baseConfig.opacityMin),
         color:
-          Math.random() < 0.5
-            ? "#ffffff"
-            : colors[Math.floor(Math.random() * colors.length)],
-        speed: 0.6,
-      })),
+          layerType === "fg" && rng(seed * 2.1) > 0.6
+            ? colors[Math.floor(rng(seed * 2.3) * colors.length)]
+            : "#ffffff",
+        speed: baseConfig.speed,
+        isColorful: layerType === "fg" && rng(seed * 2.1) > 0.6,
+      };
+    };
+
+    return {
+      background: Array.from({ length: 400 }, (_, i) =>
+        createStar(i + 1000, "bg"),
+      ),
+      middle: Array.from({ length: 200 }, (_, i) =>
+        createStar(i + 2000, "mid"),
+      ),
+      foreground: Array.from({ length: 80 }, (_, i) =>
+        createStar(i + 3000, "fg"),
+      ),
     };
   }, []);
 
@@ -195,6 +226,138 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   useEffect(() => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
+
+  // Função de renderização Canvas otimizada
+  const renderStarsCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Limpa canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const currentMapX = mapX.get();
+    const currentMapY = mapY.get();
+
+    // Função para renderizar camada de estrelas
+    const renderLayer = (stars: typeof starData.background, speed: number) => {
+      stars.forEach((star) => {
+        // Calcula posição com parallax
+        const parallaxX = currentMapX * speed;
+        const parallaxY = currentMapY * speed;
+
+        // Converte coordenadas do mundo para canvas
+        const worldToCanvasScale = canvasWidth / (WORLD_CONFIG.width * 3); // 300% width
+        let x = (star.x / WORLD_CONFIG.width) * canvasWidth + parallaxX;
+        let y = (star.y / WORLD_CONFIG.height) * canvasHeight + parallaxY;
+
+        // Renderiza múltiplas cópias para efeito wrap seamless
+        for (
+          let offsetX = -canvasWidth;
+          offsetX <= canvasWidth;
+          offsetX += canvasWidth
+        ) {
+          for (
+            let offsetY = -canvasHeight;
+            offsetY <= canvasHeight;
+            offsetY += canvasHeight
+          ) {
+            const finalX = x + offsetX;
+            const finalY = y + offsetY;
+
+            // Culling - só renderiza se estiver visível
+            if (
+              finalX < -star.size ||
+              finalX > canvasWidth + star.size ||
+              finalY < -star.size ||
+              finalY > canvasHeight + star.size
+            ) {
+              continue;
+            }
+
+            // Renderiza estrela
+            ctx.globalAlpha = star.opacity;
+            ctx.fillStyle = star.color;
+
+            if (star.isColorful) {
+              // Estrelas coloridas com glow
+              const gradient = ctx.createRadialGradient(
+                finalX,
+                finalY,
+                0,
+                finalX,
+                finalY,
+                star.size * 2,
+              );
+              gradient.addColorStop(0, star.color);
+              gradient.addColorStop(0.5, star.color + "88");
+              gradient.addColorStop(1, star.color + "00");
+              ctx.fillStyle = gradient;
+
+              ctx.beginPath();
+              ctx.arc(finalX, finalY, star.size * 2, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Centro mais brilhante
+              ctx.fillStyle = star.color;
+            }
+
+            ctx.beginPath();
+            ctx.arc(finalX, finalY, star.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      });
+    };
+
+    // Renderiza todas as camadas
+    renderLayer(starData.background, starData.background[0]?.speed || 0.08);
+    renderLayer(starData.middle, starData.middle[0]?.speed || 0.25);
+    renderLayer(starData.foreground, starData.foreground[0]?.speed || 0.5);
+
+    ctx.globalAlpha = 1;
+  }, [starData, mapX, mapY]);
+
+  // Sistema de animação otimizado para Canvas
+  useEffect(() => {
+    const animate = () => {
+      renderStarsCanvas();
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [renderStarsCanvas]);
+
+  // Atualiza canvas size quando container muda
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+
+    if (!canvas || !container) return;
+
+    const updateCanvasSize = () => {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    updateCanvasSize();
+
+    const resizeObserver = new ResizeObserver(updateCanvasSize);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Sistema de momentum/inércia
   useEffect(() => {
@@ -553,213 +716,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Fundo de estrelas com parallax cobrindo área virtual completa */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Camada de fundo */}
-        <motion.div
-          className="absolute w-[300%] h-[300%] -left-full -top-full"
-          style={{
-            x: mapX.get() * starLayers.background[0]?.speed || 0,
-            y: mapY.get() * starLayers.background[0]?.speed || 0,
-          }}
-        >
-          {/* Renderiza 3 cópias para wrapping como os pontos */}
-          <div className="absolute inset-0">
-            {starLayers.background.map((star) => (
-              <div
-                key={`bg-${star.id}`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                }}
-              />
-            ))}
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: "translateX(100%)" }}
-          >
-            {starLayers.background.map((star) => (
-              <div
-                key={`bg-${star.id}-x`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                }}
-              />
-            ))}
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: "translateX(-100%)" }}
-          >
-            {starLayers.background.map((star) => (
-              <div
-                key={`bg-${star.id}-x2`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                }}
-              />
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Camada média */}
-        <motion.div
-          className="absolute w-[300%] h-[300%] -left-full -top-full"
-          style={{
-            x: mapX.get() * starLayers.middle[0]?.speed || 0,
-            y: mapY.get() * starLayers.middle[0]?.speed || 0,
-          }}
-        >
-          <div className="absolute inset-0">
-            {starLayers.middle.map((star) => (
-              <div
-                key={`mid-${star.id}`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                }}
-              />
-            ))}
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: "translateX(100%)" }}
-          >
-            {starLayers.middle.map((star) => (
-              <div
-                key={`mid-${star.id}-x`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                }}
-              />
-            ))}
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: "translateX(-100%)" }}
-          >
-            {starLayers.middle.map((star) => (
-              <div
-                key={`mid-${star.id}-x2`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                }}
-              />
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Camada frontal com estrelas coloridas */}
-        <motion.div
-          className="absolute w-[300%] h-[300%] -left-full -top-full"
-          style={{
-            x: mapX.get() * starLayers.foreground[0]?.speed || 0,
-            y: mapY.get() * starLayers.foreground[0]?.speed || 0,
-          }}
-        >
-          <div className="absolute inset-0">
-            {starLayers.foreground.map((star) => (
-              <div
-                key={`fg-${star.id}`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                  boxShadow:
-                    star.color !== "#ffffff"
-                      ? `0 0 ${star.size * 4}px ${star.color}88`
-                      : "none",
-                }}
-              />
-            ))}
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: "translateX(100%)" }}
-          >
-            {starLayers.foreground.map((star) => (
-              <div
-                key={`fg-${star.id}-x`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                  boxShadow:
-                    star.color !== "#ffffff"
-                      ? `0 0 ${star.size * 4}px ${star.color}88`
-                      : "none",
-                }}
-              />
-            ))}
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: "translateX(-100%)" }}
-          >
-            {starLayers.foreground.map((star) => (
-              <div
-                key={`fg-${star.id}-x2`}
-                className="absolute rounded-full"
-                style={{
-                  left: `${(star.x / WORLD_CONFIG.width) * 100}%`,
-                  top: `${(star.y / WORLD_CONFIG.height) * 100}%`,
-                  width: `${star.size}px`,
-                  height: `${star.size}px`,
-                  backgroundColor: star.color,
-                  opacity: star.opacity,
-                  boxShadow:
-                    star.color !== "#ffffff"
-                      ? `0 0 ${star.size * 4}px ${star.color}88`
-                      : "none",
-                }}
-              />
-            ))}
-          </div>
-        </motion.div>
-      </div>
+      {/* Canvas para estrelas com parallax otimizado */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          width: "100%",
+          height: "100%",
+          willChange: "contents",
+        }}
+      />
 
       {/* Nebulosas de fundo */}
       <div className="absolute inset-0 pointer-events-none">
