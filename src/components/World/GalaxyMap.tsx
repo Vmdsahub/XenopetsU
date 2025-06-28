@@ -138,16 +138,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const lastMoveTime = useRef(Date.now());
   const [hasMoved, setHasMoved] = useState(false);
 
-  // Estrelas fixas - distribuídas em todo o mapa toroidal
+  // Sistema de estrelas simplificado
   const stars = useMemo(() => {
-    return Array.from({ length: 1200 }, (_, i) => ({
+    return Array.from({ length: 200 }, (_, i) => ({
       id: i,
-      x: Math.random() * WORLD_CONFIG.width, // Cobre todo o mundo toroidal
-      y: Math.random() * WORLD_CONFIG.height,
-      animationDelay: Math.random() * 3,
-      animationDuration: 2 + Math.random() * 2,
-      size: 0.5 + Math.random() * 1.5, // Tamanhos variados
-      layer: Math.floor(Math.random() * 3), // 3 camadas para parallax
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 0.5 + Math.random() * 1,
+      opacity: 0.3 + Math.random() * 0.7,
     }));
   }, []);
 
@@ -158,34 +156,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   useEffect(() => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
-
-  // Atualiza parallax das estrelas em tempo real
-  useEffect(() => {
-    const updateParallax = () => {
-      const layer1 = document.querySelectorAll('[data-star-layer="0"]');
-      const layer2 = document.querySelectorAll('[data-star-layer="1"]');
-      const layer3 = document.querySelectorAll('[data-star-layer="2"]');
-
-      const mapXValue = mapX.get();
-      const mapYValue = mapY.get();
-
-      layer1.forEach((el: any) => {
-        el.style.transform = `translate(${mapXValue * 0.1}px, ${mapYValue * 0.1}px)`;
-      });
-
-      layer2.forEach((el: any) => {
-        el.style.transform = `translate(${mapXValue * 0.3}px, ${mapYValue * 0.3}px)`;
-      });
-
-      layer3.forEach((el: any) => {
-        el.style.transform = `translate(${mapXValue * 0.6}px, ${mapYValue * 0.6}px)`;
-      });
-
-      requestAnimationFrame(updateParallax);
-    };
-
-    updateParallax();
-  }, [mapX, mapY]);
 
   // Sistema de momentum/inércia
   useEffect(() => {
