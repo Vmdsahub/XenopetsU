@@ -391,9 +391,6 @@ const createEngineSound = () => {
   }
 };
 
-// Instância global do som do motor
-const engineSound = new EngineSound();
-
 // Funções de conveniência
 export const playNotificationSound = (): Promise<void> => {
   // Tenta o Web Audio API primeiro (mais confiável)
@@ -407,14 +404,20 @@ export const playNotificationSound = (): Promise<void> => {
 };
 
 export const startEngineSound = (): void => {
-  // Só inicia se não estiver já tocando
-  if (!engineSound.isCurrentlyPlaying()) {
-    engineSound.start();
+  // Para o som anterior se existir
+  if (currentEngineSound) {
+    currentEngineSound.stop();
   }
+
+  // Cria e inicia novo som imediatamente
+  currentEngineSound = createEngineSound();
 };
 
 export const stopEngineSound = (): void => {
-  engineSound.stop();
+  if (currentEngineSound) {
+    currentEngineSound.stop();
+    currentEngineSound = null;
+  }
 };
 
 export const playBarrierCollisionSound = (): Promise<void> => {
