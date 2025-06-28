@@ -8,7 +8,6 @@ import React, {
 import { motion, useMotionValue, animate } from "framer-motion";
 import { PlayerShip } from "./PlayerShip";
 import { MapPoint } from "./MapPoint";
-import { playBarrierCollisionSound } from "../../utils/soundManager";
 
 interface GalaxyMapProps {
   onPointClick: (pointId: string, pointData: any) => void;
