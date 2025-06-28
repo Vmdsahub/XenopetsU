@@ -504,7 +504,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         // Verifica colisão com barreira circular no momentum
         const centerX = WORLD_CONFIG.width / 2;
         const centerY = WORLD_CONFIG.height / 2;
-        const barrierRadius = 70;
+        const barrierRadius = 35;
 
         const distanceFromCenter = Math.sqrt(
           Math.pow(proposedX - centerX, 2) + Math.pow(proposedY - centerY, 2),
@@ -518,6 +518,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           const angle = Math.atan2(proposedY - centerY, proposedX - centerX);
           newX = centerX + Math.cos(angle) * barrierRadius;
           newY = centerY + Math.sin(angle) * barrierRadius;
+
+          console.log(
+            "Momentum collision! Distance:",
+            distanceFromCenter,
+            "Stopping at:",
+            newX,
+            newY,
+          );
 
           // Para o momentum completamente
           setIsDecelerating(false);
