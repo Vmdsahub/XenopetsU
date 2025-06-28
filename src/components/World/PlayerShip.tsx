@@ -20,17 +20,17 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
   useEffect(() => {
     if (isDragging) {
       setShowTrail(true);
-      // Sempre inicia o som quando começa a arrastar
+      // Inicia o som quando começa a arrastar - o debounce interno cuida da frequência
       startEngineSound();
     } else {
-      // Para o som imediatamente quando para de arrastar
+      // Para o som quando para de arrastar - com debounce interno
       stopEngineSound();
-      
+
       // Mantém o trail por um tempo após parar
       const timeout = setTimeout(() => {
         setShowTrail(false);
-      }, 200);
-      
+      }, 150);
+
       return () => clearTimeout(timeout);
     }
   }, [isDragging]);

@@ -189,15 +189,29 @@ const tryAlternativePlay = (
   }
 };
 
+// Controle de frequência para sons de colisão
+let lastCollisionSoundTime = 0;
+const COLLISION_SOUND_COOLDOWN = 300; // 300ms entre sons de colisão
+
 /**
  * Creates a clean, crisp collision sound using Web Audio API
  */
 const playCollisionSound = (): Promise<void> => {
   return new Promise((resolve) => {
+    const now = Date.now();
+
+    // Controla frequência - só toca se passou tempo suficiente
+    if (now - lastCollisionSoundTime < COLLISION_SOUND_COOLDOWN) {
+      resolve();
+      return;
+    }
+
+    lastCollisionSoundTime = now;
+
     try {
       const audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
-      
+
       // Create a simple but effective collision sound
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -210,32 +224,32 @@ const playCollisionSound = (): Promise<void> => {
 
       // Configure the filter for a cleaner sound
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+      filter.frequency.setValueAtTime(800, audioContext.currentTime);
       filter.Q.setValueAtTime(1, audioContext.currentTime);
 
       // Create a sharp, clean collision sound
       oscillator.type = "triangle"; // Smoother than sawtooth
-      oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(180, audioContext.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(
-        80,
-        audioContext.currentTime + 0.15,
+        100,
+        audioContext.currentTime + 0.12,
       );
 
-      // Clean volume envelope
+      // Clean volume envelope - reduzido para evitar sobreposição
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(
-        0.2,
+        0.15,
         audioContext.currentTime + 0.01,
       );
       gainNode.gain.exponentialRampToValueAtTime(
         0.001,
-        audioContext.currentTime + 0.15,
+        audioContext.currentTime + 0.12,
       );
 
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.15);
+      oscillator.stop(audioContext.currentTime + 0.12);
 
-      setTimeout(() => resolve(), 200);
+      setTimeout(() => resolve(), 150);
     } catch (error) {
       console.warn("Web Audio API collision sound failed:", error);
       resolve();
@@ -284,139 +298,98 @@ const playNotificationBeep = (): Promise<void> => {
 };
 
 /**
- * Enhanced Engine sound manager for ship motors
+ * Simplified Engine sound - creates new instances for 100% reliability
  */
-class EngineSound {
-  private audioContext: AudioContext | null = null;
-  private oscillators: OscillatorNode[] = [];
-  private gainNodes: GainNode[] = [];
-  private masterGain: GainNode | null = null;
-  private isPlaying = false;
-  private startTime = 0;
+let currentEngineSound: { stop: () => void } | null = null;
 
-  start(): void {
-    // Se já está tocando, não inicia novamente
-    if (this.isPlaying) return;
+const createEngineSound = () => {
+  try {
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
 
-    try {
-      this.audioContext = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+    const startTime = audioContext.currentTime;
 
-      this.startTime = this.audioContext.currentTime;
+    // Cria múltiplos osciladores para som mais rico
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const osc3 = audioContext.createOscillator();
 
-      // Cria múltiplos osciladores para som mais rico
-      const osc1 = this.audioContext.createOscillator();
-      const osc2 = this.audioContext.createOscillator();
-      const osc3 = this.audioContext.createOscillator();
+    const gain1 = audioContext.createGain();
+    const gain2 = audioContext.createGain();
+    const gain3 = audioContext.createGain();
+    const masterGain = audioContext.createGain();
 
-      const gain1 = this.audioContext.createGain();
-      const gain2 = this.audioContext.createGain();
-      const gain3 = this.audioContext.createGain();
-      const masterGain = this.audioContext.createGain();
+    // Conecta osciladores
+    osc1.connect(gain1);
+    osc2.connect(gain2);
+    osc3.connect(gain3);
 
-      // Conecta osciladores
-      osc1.connect(gain1);
-      osc2.connect(gain2);
-      osc3.connect(gain3);
+    gain1.connect(masterGain);
+    gain2.connect(masterGain);
+    gain3.connect(masterGain);
+    masterGain.connect(audioContext.destination);
 
-      gain1.connect(masterGain);
-      gain2.connect(masterGain);
-      gain3.connect(masterGain);
-      masterGain.connect(this.audioContext.destination);
+    // Configuração para som de nave espacial futurística
+    osc1.type = "sine";
+    osc2.type = "sine";
+    osc3.type = "triangle";
 
-      // Configuração para som de nave espacial futurística
-      osc1.type = "sine";
-      osc2.type = "sine";
-      osc3.type = "triangle";
+    // Frequências base e harmônicos
+    osc1.frequency.setValueAtTime(120, startTime);
+    osc2.frequency.setValueAtTime(240, startTime); // oitava
+    osc3.frequency.setValueAtTime(180, startTime); // quinta
 
-      // Frequências base e harmônicos
-      osc1.frequency.setValueAtTime(120, this.startTime);
-      osc2.frequency.setValueAtTime(240, this.startTime); // oitava
-      osc3.frequency.setValueAtTime(180, this.startTime); // quinta
+    // Modulação sutil para som vivo
+    const lfo = audioContext.createOscillator();
+    const lfoGain = audioContext.createGain();
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc1.frequency);
+    lfoGain.connect(osc2.frequency);
 
-      // Modulação sutil para som vivo
-      const lfo = this.audioContext.createOscillator();
-      const lfoGain = this.audioContext.createGain();
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc1.frequency);
-      lfoGain.connect(osc2.frequency);
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(3, startTime);
+    lfoGain.gain.setValueAtTime(8, startTime);
 
-      lfo.type = "sine";
-      lfo.frequency.setValueAtTime(3, this.startTime);
-      lfoGain.gain.setValueAtTime(8, this.startTime);
+    // Volumes individuais
+    gain1.gain.setValueAtTime(0.04, startTime);
+    gain2.gain.setValueAtTime(0.02, startTime);
+    gain3.gain.setValueAtTime(0.015, startTime);
 
-      // Volumes individuais
-      gain1.gain.setValueAtTime(0.04, this.startTime);
-      gain2.gain.setValueAtTime(0.02, this.startTime);
-      gain3.gain.setValueAtTime(0.015, this.startTime);
+    // Envelope de volume master com fade-in rápido
+    masterGain.gain.setValueAtTime(0, startTime);
+    masterGain.gain.linearRampToValueAtTime(1, startTime + 0.1);
 
-      // Envelope de volume master com fade-in suave
-      masterGain.gain.setValueAtTime(0, this.startTime);
-      masterGain.gain.linearRampToValueAtTime(1, this.startTime + 0.2);
+    // Inicia osciladores
+    const oscillators = [osc1, osc2, osc3, lfo];
+    oscillators.forEach((osc) => osc.start(startTime));
 
-      // Inicia osciladores
-      osc1.start(this.startTime);
-      osc2.start(this.startTime);
-      osc3.start(this.startTime);
-      lfo.start(this.startTime);
+    // Retorna controle para parar
+    return {
+      stop: () => {
+        try {
+          const stopTime = audioContext.currentTime;
+          masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.1);
 
-      // Armazena referências para cleanup
-      this.oscillators = [osc1, osc2, osc3, lfo];
-      this.gainNodes = [gain1, gain2, gain3, lfoGain];
-      this.masterGain = masterGain;
-      this.isPlaying = true;
-
-    } catch (error) {
-      console.warn("Engine sound failed to start:", error);
-      this.isPlaying = false;
-    }
-  }
-
-  stop(): void {
-    if (!this.isPlaying || !this.audioContext || !this.masterGain) return;
-
-    try {
-      const stopTime = this.audioContext.currentTime;
-      
-      // Fade out suave
-      this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.2);
-
-      // Para todos os osciladores após o fade
-      setTimeout(() => {
-        this.oscillators.forEach(osc => {
-          try {
-            osc.stop();
-          } catch (e) {
-            // Ignora erros se já parou
-          }
-        });
-
-        if (this.audioContext) {
-          this.audioContext.close();
+          setTimeout(() => {
+            oscillators.forEach((osc) => {
+              try {
+                osc.stop();
+              } catch (e) {
+                // Ignora erros
+              }
+            });
+            audioContext.close();
+          }, 150);
+        } catch (error) {
+          console.warn("Engine sound stop failed:", error);
         }
-
-        // Limpa referências
-        this.oscillators = [];
-        this.gainNodes = [];
-        this.masterGain = null;
-        this.audioContext = null;
-        this.isPlaying = false;
-      }, 250);
-
-    } catch (error) {
-      console.warn("Engine sound failed to stop:", error);
-      this.isPlaying = false;
-    }
+      },
+    };
+  } catch (error) {
+    console.warn("Engine sound creation failed:", error);
+    return { stop: () => {} };
   }
-
-  // Método para verificar se está tocando
-  isCurrentlyPlaying(): boolean {
-    return this.isPlaying;
-  }
-}
-
-// Instância global do som do motor
-const engineSound = new EngineSound();
+};
 
 // Funções de conveniência
 export const playNotificationSound = (): Promise<void> => {
@@ -431,14 +404,20 @@ export const playNotificationSound = (): Promise<void> => {
 };
 
 export const startEngineSound = (): void => {
-  // Só inicia se não estiver já tocando
-  if (!engineSound.isCurrentlyPlaying()) {
-    engineSound.start();
+  // Para o som anterior se existir
+  if (currentEngineSound) {
+    currentEngineSound.stop();
   }
+
+  // Cria e inicia novo som imediatamente
+  currentEngineSound = createEngineSound();
 };
 
 export const stopEngineSound = (): void => {
-  engineSound.stop();
+  if (currentEngineSound) {
+    currentEngineSound.stop();
+    currentEngineSound = null;
+  }
 };
 
 export const playBarrierCollisionSound = (): Promise<void> => {
