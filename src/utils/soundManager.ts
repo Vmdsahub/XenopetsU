@@ -451,6 +451,9 @@ class EngineSound {
         this.masterGain = null;
         this.audioContext = null;
         this.isPlaying = false;
+
+        // Reseta o timer de debounce para permitir start imediato após parar
+        this.lastStartTime = 0;
       }, 150);
     } catch (error) {
       console.warn("Engine sound failed to stop:", error);
