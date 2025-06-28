@@ -587,8 +587,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     let newMapX = mapX.get() + deltaX;
     let newMapY = mapY.get() + deltaY;
 
-    // Wrap visual do mapa
-    const wrapThreshold = 2000;
+    // Wrap visual do mapa expandido
+    const wrapThreshold = 5000;
     if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
     if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
     if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
