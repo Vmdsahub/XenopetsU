@@ -339,7 +339,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     mapX.set(newMapX);
     mapY.set(newMapY);
 
-    // Rotação imediata e responsiva
+    // Rotação fluida e responsiva
     if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
       setHasMoved(true);
       const newAngle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
@@ -354,8 +354,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
 
-      // Aplica rotação direta para máxima performance
-      shipRotation.set(currentAngle + diff);
+      // Aplica rotação suave mas responsiva
+      const targetAngle = currentAngle + diff;
+      animate(shipRotation, targetAngle, {
+        duration: 0.08,
+        ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart para suavidade
+      });
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -435,8 +439,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
 
-        // Aplica rotação direta para máxima performance
-        shipRotation.set(currentAngle + diff);
+        // Aplica rotação suave mas responsiva
+        const targetAngle = currentAngle + diff;
+        animate(shipRotation, targetAngle, {
+          duration: 0.08,
+          ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart para suavidade
+        });
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
