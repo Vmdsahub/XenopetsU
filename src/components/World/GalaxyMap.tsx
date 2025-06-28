@@ -167,10 +167,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       const applyMomentum = () => {
         const currentVel = velocityRef.current;
-        const friction = 0.85; // Atrito mais forte para desaceleração mais rápida
+        const friction = 0.98; // Atrito muito baixo para deslizamento longo
 
         // Para quando velocidade fica muito baixa
-        if (Math.abs(currentVel.x) < 0.05 && Math.abs(currentVel.y) < 0.05) {
+        if (Math.abs(currentVel.x) < 0.01 && Math.abs(currentVel.y) < 0.01) {
           setIsDecelerating(false);
           setVelocity({ x: 0, y: 0 });
           return;
