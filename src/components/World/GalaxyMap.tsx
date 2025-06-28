@@ -568,9 +568,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           setVelocity({ x: 0, y: 0 });
           return;
         }
-          setVelocity({ x: 0, y: 0 });
-          return;
-        }
 
         setShipPosition({ x: newX, y: newY });
 
@@ -746,7 +743,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     let newY = proposedY;
     let allowMovement = true;
 
-    // Calcula posição visual proposta baseada no movimento do mapa
+    // Calcula posiç��o visual proposta baseada no movimento do mapa
     const currentMapX = mapX.get();
     const currentMapY = mapY.get();
     const deltaMapX = (shipPosRef.current.x - proposedX) * 12;
