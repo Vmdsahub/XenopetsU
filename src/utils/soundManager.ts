@@ -229,6 +229,93 @@ const playNotificationBeep = (): Promise<void> => {
   });
 };
 
+/**
+ * Engine sound manager for ship motors
+ */
+class EngineSound {
+  private audioContext: AudioContext | null = null;
+  private oscillator: OscillatorNode | null = null;
+  private gainNode: GainNode | null = null;
+  private isPlaying = false;
+
+  start(): void {
+    if (this.isPlaying) return;
+
+    try {
+      this.audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+
+      this.oscillator = this.audioContext.createOscillator();
+      this.gainNode = this.audioContext.createGain();
+
+      this.oscillator.connect(this.gainNode);
+      this.gainNode.connect(this.audioContext.destination);
+
+      // Engine sound: low frequency with subtle modulation
+      this.oscillator.type = "sawtooth";
+      this.oscillator.frequency.setValueAtTime(
+        80,
+        this.audioContext.currentTime,
+      );
+
+      // Add slight frequency modulation for engine rumble effect
+      const lfo = this.audioContext.createOscillator();
+      const lfoGain = this.audioContext.createGain();
+      lfo.connect(lfoGain);
+      lfoGain.connect(this.oscillator.frequency);
+
+      lfo.frequency.setValueAtTime(8, this.audioContext.currentTime);
+      lfoGain.gain.setValueAtTime(15, this.audioContext.currentTime);
+
+      // Volume envelope
+      this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+      this.gainNode.gain.linearRampToValueAtTime(
+        0.08,
+        this.audioContext.currentTime + 0.1,
+      );
+
+      this.oscillator.start();
+      lfo.start();
+      this.isPlaying = true;
+    } catch (error) {
+      console.warn("Engine sound failed to start:", error);
+    }
+  }
+
+  stop(): void {
+    if (!this.isPlaying) return;
+
+    try {
+      if (this.gainNode && this.audioContext) {
+        // Fade out
+        this.gainNode.gain.linearRampToValueAtTime(
+          0,
+          this.audioContext.currentTime + 0.2,
+        );
+
+        setTimeout(() => {
+          if (this.oscillator) {
+            this.oscillator.stop();
+            this.oscillator = null;
+          }
+          if (this.audioContext) {
+            this.audioContext.close();
+            this.audioContext = null;
+          }
+          this.gainNode = null;
+          this.isPlaying = false;
+        }, 250);
+      }
+    } catch (error) {
+      console.warn("Engine sound failed to stop:", error);
+      this.isPlaying = false;
+    }
+  }
+}
+
+// Global engine sound instance
+const engineSound = new EngineSound();
+
 // Convenience functions
 export const playNotificationSound = (): Promise<void> => {
   // Try the Web Audio API notification first (more reliable)
