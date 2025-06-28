@@ -189,15 +189,29 @@ const tryAlternativePlay = (
   }
 };
 
+// Controle de frequência para sons de colisão
+let lastCollisionSoundTime = 0;
+const COLLISION_SOUND_COOLDOWN = 300; // 300ms entre sons de colisão
+
 /**
  * Creates a clean, crisp collision sound using Web Audio API
  */
 const playCollisionSound = (): Promise<void> => {
   return new Promise((resolve) => {
+    const now = Date.now();
+
+    // Controla frequência - só toca se passou tempo suficiente
+    if (now - lastCollisionSoundTime < COLLISION_SOUND_COOLDOWN) {
+      resolve();
+      return;
+    }
+
+    lastCollisionSoundTime = now;
+
     try {
       const audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
-      
+
       // Create a simple but effective collision sound
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -210,32 +224,32 @@ const playCollisionSound = (): Promise<void> => {
 
       // Configure the filter for a cleaner sound
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+      filter.frequency.setValueAtTime(800, audioContext.currentTime);
       filter.Q.setValueAtTime(1, audioContext.currentTime);
 
       // Create a sharp, clean collision sound
       oscillator.type = "triangle"; // Smoother than sawtooth
-      oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(180, audioContext.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(
-        80,
-        audioContext.currentTime + 0.15,
+        100,
+        audioContext.currentTime + 0.12,
       );
 
-      // Clean volume envelope
+      // Clean volume envelope - reduzido para evitar sobreposição
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(
-        0.2,
+        0.15,
         audioContext.currentTime + 0.01,
       );
       gainNode.gain.exponentialRampToValueAtTime(
         0.001,
-        audioContext.currentTime + 0.15,
+        audioContext.currentTime + 0.12,
       );
 
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.15);
+      oscillator.stop(audioContext.currentTime + 0.12);
 
-      setTimeout(() => resolve(), 200);
+      setTimeout(() => resolve(), 150);
     } catch (error) {
       console.warn("Web Audio API collision sound failed:", error);
       resolve();
@@ -365,7 +379,6 @@ class EngineSound {
       this.gainNodes = [gain1, gain2, gain3, lfoGain];
       this.masterGain = masterGain;
       this.isPlaying = true;
-
     } catch (error) {
       console.warn("Engine sound failed to start:", error);
       this.isPlaying = false;
@@ -377,13 +390,13 @@ class EngineSound {
 
     try {
       const stopTime = this.audioContext.currentTime;
-      
+
       // Fade out suave
       this.masterGain.gain.linearRampToValueAtTime(0, stopTime + 0.2);
 
       // Para todos os osciladores após o fade
       setTimeout(() => {
-        this.oscillators.forEach(osc => {
+        this.oscillators.forEach((osc) => {
           try {
             osc.stop();
           } catch (e) {
@@ -402,7 +415,6 @@ class EngineSound {
         this.audioContext = null;
         this.isPlaying = false;
       }, 250);
-
     } catch (error) {
       console.warn("Engine sound failed to stop:", error);
       this.isPlaying = false;
