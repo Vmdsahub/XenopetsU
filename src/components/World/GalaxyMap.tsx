@@ -531,9 +531,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       const centerVisualX = canvas.width / 2;
       const centerVisualY = canvas.height / 2;
+
+      // A posição efetiva da nave é sempre no centro visual menos o offset do mapa
       const effectiveShipX = centerVisualX - proposedMapX;
       const effectiveShipY = centerVisualY - proposedMapY;
+
       const barrierRadius = 1200;
+
+      // Calcula distância do centro da tela (onde a nave está) ao centro da barreira
       const distanceFromCenter = Math.sqrt(
         Math.pow(effectiveShipX - centerVisualX, 2) +
           Math.pow(effectiveShipY - centerVisualY, 2),
