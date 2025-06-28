@@ -157,20 +157,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     velocityRef.current = velocity;
   }, [velocity]);
 
-  // Aplica momentum quando para de arrastar
+  // Sistema de momentum mais suave usando interpolação
   useEffect(() => {
     if (
       !isDragging &&
-      (Math.abs(velocity.x) > 0.01 || Math.abs(velocity.y) > 0.01)
+      (Math.abs(velocity.x) > 0.001 || Math.abs(velocity.y) > 0.001)
     ) {
       setIsDecelerating(true);
 
+      let animationId: number;
+
       const applyMomentum = () => {
         const currentVel = velocityRef.current;
-        const friction = 0.98; // Atrito muito baixo para deslizamento longo
+        const friction = 0.995; // Atrito muito suave para deslizamento longo
 
         // Para quando velocidade fica muito baixa
-        if (Math.abs(currentVel.x) < 0.01 && Math.abs(currentVel.y) < 0.01) {
+        if (Math.abs(currentVel.x) < 0.001 && Math.abs(currentVel.y) < 0.001) {
           setIsDecelerating(false);
           setVelocity({ x: 0, y: 0 });
           return;
@@ -179,35 +181,45 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         const newVelX = currentVel.x * friction;
         const newVelY = currentVel.y * friction;
 
-        // Aplica movimento com momentum - movimento mais suave
+        // Movimento muito suave - dividindo por valores maiores
+        const deltaX = newVelX * 2; // Movimento mapa
+        const deltaY = newVelY * 2;
+
+        // Atualiza posição da nave suavemente
         const newX = wrap(
-          shipPosRef.current.x - newVelX / 8,
+          shipPosRef.current.x - deltaX / 16,
           0,
           WORLD_CONFIG.width,
         );
         const newY = wrap(
-          shipPosRef.current.y - newVelY / 8,
+          shipPosRef.current.y - deltaY / 16,
           0,
           WORLD_CONFIG.height,
         );
 
         setShipPosition({ x: newX, y: newY });
 
-        // Atualiza mapa visual de forma mais suave
-        const newMapX = mapX.get() + newVelX * 0.5;
-        const newMapY = mapY.get() + newVelY * 0.5;
+        // Mapa visual move de forma muito suave
+        const newMapX = mapX.get() + deltaX;
+        const newMapY = mapY.get() + deltaY;
 
         mapX.set(newMapX);
         mapY.set(newMapY);
 
         setVelocity({ x: newVelX, y: newVelY });
 
-        requestAnimationFrame(applyMomentum);
+        animationId = requestAnimationFrame(applyMomentum);
       };
 
-      requestAnimationFrame(applyMomentum);
+      animationId = requestAnimationFrame(applyMomentum);
+
+      return () => {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+      };
     }
-  }, [isDragging, velocity.x, velocity.y, mapX, mapY]);
+  }, [isDragging]);
 
   // Verifica proximidade - simples e direto
   useEffect(() => {
