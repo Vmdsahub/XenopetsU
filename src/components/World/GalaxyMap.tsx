@@ -606,12 +606,12 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }
 
       const newX = wrap(
-        shipPosRef.current.x - deltaX / 8,
+        shipPosRef.current.x - deltaX / 12,
         0,
         WORLD_CONFIG.width,
       );
       const newY = wrap(
-        shipPosRef.current.y - deltaY / 8,
+        shipPosRef.current.y - deltaY / 12,
         0,
         WORLD_CONFIG.height,
       );
