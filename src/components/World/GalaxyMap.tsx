@@ -1045,9 +1045,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         >
           {/* Animação de rotação continua */}
           <motion.div
-            className="w-full h-full rounded-full"
+            className="w-full h-full rounded-full border-2 border-dashed"
             style={{
-              border: "2px dashed",
               borderColor: isColliding
                 ? "rgba(239, 68, 68, 0.9)"
                 : "rgba(255, 255, 255, 0.15)",
@@ -1057,7 +1056,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
             }}
             transition={{
               rotate: {
-                duration: 20,
+                duration: 60, // Rotação mais lenta - 1 minuto por volta
                 repeat: Infinity,
                 ease: "linear",
               },
@@ -1068,11 +1067,13 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           {sparks.map((spark) => (
             <motion.div
               key={spark.id}
-              className="absolute w-1 h-1 bg-red-500 rounded-full"
+              className="absolute w-2 h-2 bg-red-500 rounded-full pointer-events-none"
               style={{
-                left: spark.x,
-                top: spark.y,
-                boxShadow: "0 0 4px rgba(239, 68, 68, 0.8)",
+                left: spark.x - 4, // Centrar a faísca
+                top: spark.y - 4,
+                boxShadow:
+                  "0 0 8px rgba(239, 68, 68, 1), 0 0 16px rgba(239, 68, 68, 0.5)",
+                zIndex: 10,
               }}
               initial={{
                 x: 0,
@@ -1084,10 +1085,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
                 x: spark.dx,
                 y: spark.dy,
                 opacity: 0,
-                scale: 0.2,
+                scale: 0.1,
               }}
               transition={{
-                duration: 0.4,
+                duration: 0.6,
                 ease: "easeOut",
               }}
             />
