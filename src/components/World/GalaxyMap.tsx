@@ -138,16 +138,14 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const lastMoveTime = useRef(Date.now());
   const [hasMoved, setHasMoved] = useState(false);
 
-  // Estrelas fixas - mais estrelas para preencher todo o mapa expandido
+  // Sistema de estrelas simplificado
   const stars = useMemo(() => {
-    return Array.from({ length: 800 }, (_, i) => ({
+    return Array.from({ length: 200 }, (_, i) => ({
       id: i,
-      x: Math.random() * 150, // Expandido para 150% para cobrir além das bordas
-      y: Math.random() * 150,
-      animationDelay: Math.random() * 3,
-      animationDuration: 2 + Math.random() * 2,
-      size: 0.5 + Math.random() * 1.5, // Tamanhos variados
-      layer: Math.floor(Math.random() * 3), // 3 camadas para parallax
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 0.5 + Math.random() * 1,
+      opacity: 0.3 + Math.random() * 0.7,
     }));
   }, []);
 
@@ -159,48 +157,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
 
-  // Atualiza parallax das estrelas em tempo real
-  useEffect(() => {
-    const updateParallax = () => {
-      const layer1 = document.querySelectorAll('[data-star-layer="0"]');
-      const layer2 = document.querySelectorAll('[data-star-layer="1"]');
-      const layer3 = document.querySelectorAll('[data-star-layer="2"]');
-
-      const mapXValue = mapX.get();
-      const mapYValue = mapY.get();
-
-      layer1.forEach((el: any) => {
-        el.style.transform = `translate(${mapXValue * 0.1}px, ${mapYValue * 0.1}px)`;
-      });
-
-      layer2.forEach((el: any) => {
-        el.style.transform = `translate(${mapXValue * 0.3}px, ${mapYValue * 0.3}px)`;
-      });
-
-      layer3.forEach((el: any) => {
-        el.style.transform = `translate(${mapXValue * 0.6}px, ${mapYValue * 0.6}px)`;
-      });
-
-      requestAnimationFrame(updateParallax);
-    };
-
-    updateParallax();
-  }, [mapX, mapY]);
-
   // Sistema de momentum/inércia
   useEffect(() => {
     velocityRef.current = velocity;
   }, [velocity]);
 
-  // Sistema de rotação suave com interpolação adaptativa ao refresh rate
+  // Sistema de rotação suave
   useEffect(() => {
     let animationId: number;
-    let lastFrameTime = performance.now();
 
-    const smoothRotation = (currentTime: number) => {
-      const deltaTime = currentTime - lastFrameTime;
-      lastFrameTime = currentTime;
-
+    const smoothRotation = () => {
       const currentAngle = shipRotation.get();
       const target = targetRotation.current;
 
@@ -213,14 +179,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
 
-      // Interpolação adaptativa ao refresh rate (60fps, 120fps, 144fps, etc.)
-      // Factor baseado em 60fps como baseline (16.67ms)
-      const baseFrameTime = 16.67;
-      const timeAdjustedFactor = Math.min(
-        1,
-        (deltaTime / baseFrameTime) * 0.25,
-      );
-      const newAngle = currentAngle + diff * timeAdjustedFactor;
+      // Interpolação suave fixa
+      const newAngle = currentAngle + diff * 0.15;
 
       shipRotation.set(newAngle);
 
@@ -539,70 +499,21 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Camada 1 - Estrelas distantes (parallax lento) */}
-      <div
-        className="absolute -inset-1/4 opacity-60 pointer-events-none"
-        data-star-layer="0"
-      >
-        {stars
-          .filter((star) => star.layer === 0)
-          .map((star) => (
-            <div
-              key={`layer0-${star.id}`}
-              className="absolute bg-white rounded-full"
-              style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                width: `${star.size * 0.8}px`,
-                height: `${star.size * 0.8}px`,
-                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
-              }}
-            />
-          ))}
-      </div>
-
-      {/* Camada 2 - Estrelas médias (parallax médio) */}
-      <div
-        className="absolute -inset-1/4 opacity-75 pointer-events-none"
-        data-star-layer="1"
-      >
-        {stars
-          .filter((star) => star.layer === 1)
-          .map((star) => (
-            <div
-              key={`layer1-${star.id}`}
-              className="absolute bg-cyan-100 rounded-full"
-              style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
-              }}
-            />
-          ))}
-      </div>
-
-      {/* Camada 3 - Estrelas próximas (parallax rápido) */}
-      <div
-        className="absolute -inset-1/4 opacity-90 pointer-events-none"
-        data-star-layer="2"
-      >
-        {stars
-          .filter((star) => star.layer === 2)
-          .map((star) => (
-            <div
-              key={`layer2-${star.id}`}
-              className="absolute bg-blue-100 rounded-full"
-              style={{
-                left: `${star.x}%`,
-                top: `${star.y}%`,
-                width: `${star.size * 1.2}px`,
-                height: `${star.size * 1.2}px`,
-                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
-              }}
-            />
-          ))}
+      {/* Fundo de estrelas fixo e simples */}
+      <div className="absolute inset-0 pointer-events-none">
+        {stars.map((star) => (
+          <div
+            key={star.id}
+            className="absolute bg-white rounded-full"
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              opacity: star.opacity,
+            }}
+          />
+        ))}
       </div>
 
       {/* Nebulosas de fundo */}
