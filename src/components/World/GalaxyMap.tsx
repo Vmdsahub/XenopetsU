@@ -659,7 +659,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       let newMapY = mapY.get() + deltaY;
 
       // Wrap visual do mapa quando sair muito longe
-      const wrapThreshold = 2000; // pixels antes de fazer wrap
+      const wrapThreshold = 5000; // pixels antes de fazer wrap
       if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
       if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
       if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
