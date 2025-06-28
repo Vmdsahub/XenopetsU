@@ -29,9 +29,7 @@ export const PlayerShip: React.FC<PlayerShipProps> = ({
         alt="Spaceship"
         className="w-full h-full object-contain drop-shadow-lg"
         animate={{
-          filter: isNearPoint
-            ? "drop-shadow(0 0 8px rgb(34, 197, 94)) brightness(1.1)"
-            : "drop-shadow(0 0 4px rgba(59, 130, 246, 0.5))",
+          filter: "drop-shadow(0 0 4px rgba(59, 130, 246, 0.5))",
         }}
       />
 
