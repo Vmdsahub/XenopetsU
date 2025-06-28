@@ -558,17 +558,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
         const collision = checkBarrierCollision(proposedMapX, proposedMapY);
         if (collision.isColliding) {
-          // Ativa flash vermelho, faíscas e som
+          // Ativa flash vermelho e faíscas
           setIsColliding(true);
           setTimeout(() => setIsColliding(false), 50); // Flash muito rápido
           if (collision.collisionPoint) {
-            createCollisionSparks(
-              collision.collisionPoint.x,
-              collision.collisionPoint.y,
-            );
+            createCollisionSparks(collision.collisionPoint.x, collision.collisionPoint.y);
           }
-          playBarrierCollisionSound().catch(() => {}); // Som não-crítico
           setIsDecelerating(false);
+          setVelocity({ x: 0, y: 0 });
+          return;
+        }
           setVelocity({ x: 0, y: 0 });
           return;
         }
@@ -1071,8 +1070,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
               style={{
                 left: spark.x - 4, // Centrar a faísca
                 top: spark.y - 4,
-                boxShadow:
-                  "0 0 8px rgba(239, 68, 68, 1), 0 0 16px rgba(239, 68, 68, 0.5)",
+                boxShadow: "0 0 8px rgba(239, 68, 68, 1), 0 0 16px rgba(239, 68, 68, 0.5)",
                 zIndex: 10,
               }}
               initial={{
