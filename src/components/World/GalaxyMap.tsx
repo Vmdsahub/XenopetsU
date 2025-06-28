@@ -443,20 +443,89 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Estrelas de fundo */}
-      <div className="absolute inset-0 opacity-80 pointer-events-none">
-        {stars.map((star) => (
-          <div
+      {/* Estrelas de fundo com parallax */}
+      <motion.div
+        className="absolute inset-0 opacity-80 pointer-events-none"
+        style={{
+          x: useMotionValue(mapX.get() * 0.1),
+          y: useMotionValue(mapY.get() * 0.1),
+        }}
+      >
+        {stars.slice(0, 50).map((star) => (
+          <motion.div
             key={star.id}
             className="absolute w-1 h-1 bg-white rounded-full"
             style={{
               left: `${star.x}%`,
               top: `${star.y}%`,
+              x: useMotionValue(mapX.get() * (0.05 + star.id * 0.001)),
+              y: useMotionValue(mapY.get() * (0.05 + star.id * 0.001)),
+              scale: useMotionValue(
+                1 + Math.sin(mapX.get() * 0.01 + star.id) * 0.2,
+              ),
+              opacity: useMotionValue(
+                0.3 + Math.cos(mapY.get() * 0.01 + star.id) * 0.5,
+              ),
               animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
             }}
           />
         ))}
-      </div>
+      </motion.div>
+
+      {/* Camada de estrelas intermediária */}
+      <motion.div
+        className="absolute inset-0 opacity-60 pointer-events-none"
+        style={{
+          x: useMotionValue(mapX.get() * 0.3),
+          y: useMotionValue(mapY.get() * 0.3),
+        }}
+      >
+        {stars.slice(50, 100).map((star) => (
+          <motion.div
+            key={star.id}
+            className="absolute w-0.5 h-0.5 bg-cyan-200 rounded-full"
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              x: useMotionValue(mapX.get() * (0.1 + star.id * 0.002)),
+              y: useMotionValue(mapY.get() * (0.1 + star.id * 0.002)),
+              scale: useMotionValue(
+                0.8 + Math.sin(mapX.get() * 0.02 + star.id) * 0.4,
+              ),
+              animation: `twinkle ${star.animationDuration * 1.5}s ease-in-out ${star.animationDelay}s infinite alternate`,
+            }}
+          />
+        ))}
+      </motion.div>
+
+      {/* Camada de estrelas próximas */}
+      <motion.div
+        className="absolute inset-0 opacity-40 pointer-events-none"
+        style={{
+          x: useMotionValue(mapX.get() * 0.6),
+          y: useMotionValue(mapY.get() * 0.6),
+        }}
+      >
+        {stars.slice(100).map((star) => (
+          <motion.div
+            key={star.id}
+            className="absolute w-1.5 h-1.5 bg-blue-100 rounded-full blur-sm"
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              x: useMotionValue(mapX.get() * (0.2 + star.id * 0.003)),
+              y: useMotionValue(mapY.get() * (0.2 + star.id * 0.003)),
+              scale: useMotionValue(
+                0.5 + Math.sin(mapX.get() * 0.03 + star.id) * 0.8,
+              ),
+              opacity: useMotionValue(
+                0.2 + Math.cos(mapY.get() * 0.02 + star.id) * 0.3,
+              ),
+              animation: `twinkle ${star.animationDuration * 2}s ease-in-out ${star.animationDelay}s infinite alternate`,
+            }}
+          />
+        ))}
+      </motion.div>
 
       {/* Nebulosas de fundo */}
       <div className="absolute inset-0 pointer-events-none">
