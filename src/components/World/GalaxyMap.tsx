@@ -651,6 +651,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     // Verifica colisão com barreira circular usando coordenadas visuais
     let newX = proposedX;
     let newY = proposedY;
+    let allowMovement = true;
 
     const canvas = canvasRef.current;
     if (canvas) {
@@ -681,6 +682,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         // Não permite o movimento - mantém posição atual
         newX = shipPosRef.current.x;
         newY = shipPosRef.current.y;
+        allowMovement = false;
 
         // Para todo movimento
         setVelocity({ x: 0, y: 0 });
@@ -690,19 +692,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
     setShipPosition({ x: newX, y: newY });
 
-    // Atualiza mapa visual com wrap
-    let newMapX = mapX.get() + deltaX;
-    let newMapY = mapY.get() + deltaY;
+    // Só atualiza mapa visual se movimento é permitido
+    if (allowMovement) {
+      // Atualiza mapa visual com wrap
+      let newMapX = mapX.get() + deltaX;
+      let newMapY = mapY.get() + deltaY;
 
-    // Wrap visual do mapa expandido
-    const wrapThreshold = 5000;
-    if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
-    if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
-    if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
-    if (newMapY < -wrapThreshold) newMapY += wrapThreshold * 2;
+      // Wrap visual do mapa expandido
+      const wrapThreshold = 5000;
+      if (newMapX > wrapThreshold) newMapX -= wrapThreshold * 2;
+      if (newMapX < -wrapThreshold) newMapX += wrapThreshold * 2;
+      if (newMapY > wrapThreshold) newMapY -= wrapThreshold * 2;
+      if (newMapY < -wrapThreshold) newMapY += wrapThreshold * 2;
 
-    mapX.set(newMapX);
-    mapY.set(newMapY);
+      mapX.set(newMapX);
+      mapY.set(newMapY);
+    }
 
     // Rotação responsiva com interpolação suave
     if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 1) {
