@@ -407,16 +407,6 @@ class EngineSound {
   stop(): void {
     if (!this.isPlaying || !this.audioContext || !this.masterGain) return;
 
-    const timeSinceStart = Date.now() - this.lastStartTime;
-
-    // Se ainda não tocou por tempo suficiente, agenda parada para depois
-    if (timeSinceStart < this.MIN_PLAY_DURATION_MS) {
-      this.startDebounceTimeout = setTimeout(() => {
-        this.stop();
-      }, this.MIN_PLAY_DURATION_MS - timeSinceStart);
-      return;
-    }
-
     try {
       const stopTime = this.audioContext.currentTime;
 
