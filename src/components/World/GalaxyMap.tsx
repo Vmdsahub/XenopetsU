@@ -589,6 +589,25 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     }
   }, [isDragging]);
 
+  // Função para criar faíscas de colisão
+  const createCollisionSparks = useCallback(
+    (collisionX: number, collisionY: number) => {
+      const newSparks = Array.from({ length: 8 }, (_, i) => ({
+        id: Date.now() + i,
+        x: collisionX,
+        y: collisionY,
+        dx: (Math.random() - 0.5) * 80,
+        dy: (Math.random() - 0.5) * 80,
+      }));
+
+      setSparks(newSparks);
+
+      // Remove faíscas após animação
+      setTimeout(() => setSparks([]), 400);
+    },
+    [],
+  );
+
   // Função para verificar colisão com barreira
   const checkBarrierCollision = useCallback(
     (proposedMapX: number, proposedMapY: number) => {
