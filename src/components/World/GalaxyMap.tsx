@@ -276,10 +276,10 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
 
-    // Calcula velocidade para momentum - reduzida para ser mais suave
+    // Calcula velocidade para momentum - suave mas responsiva
     if (deltaTime > 0) {
-      const velX = (deltaX / Math.max(deltaTime / 16, 1)) * 0.1; // Velocidade inicial muito reduzida
-      const velY = (deltaY / Math.max(deltaTime / 16, 1)) * 0.1;
+      const velX = deltaX * 0.2; // Velocidade baseada diretamente no movimento
+      const velY = deltaY * 0.2;
       setVelocity({ x: velX, y: velY });
     }
 
