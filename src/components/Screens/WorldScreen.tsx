@@ -37,30 +37,14 @@ export const WorldScreen: React.FC = () => {
             >
               {/* Header */}
               <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-100">
-                <div className="text-center">
-                  <h3 className="font-bold text-xl text-gray-900">
-                    Mapa Galáctico
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Explore mundos desconhecidos
-                  </p>
+                <div className="text-center text-xl text-gray-900">
+                  Xenoverse
                 </div>
               </div>
 
               {/* Galaxy Map */}
               <div className="p-4">
                 <GalaxyMap onPointClick={handlePointClick} />
-              </div>
-
-              {/* Instructions */}
-              <div className="p-4 bg-gray-50 border-t border-gray-100">
-                <div className="text-center text-sm text-gray-600">
-                  <p className="mb-2">🚀 Navegue arrastando o mapa</p>
-                  <p className="mb-2">
-                    🎯 Aproxime-se dos pontos para ativá-los
-                  </p>
-                  <p>🌍 Clique nos pontos para explorar</p>
-                </div>
               </div>
             </motion.div>
           </motion.div>

@@ -260,7 +260,24 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     }
   }, [isDragging]);
 
-  // Verifica proximidade - simples e direto
+  // Função para calcular distância toroidal correta
+  const getToroidalDistance = (
+    pos1: { x: number; y: number },
+    pos2: { x: number; y: number },
+  ) => {
+    // Calcula diferenças considerando wrap em mundo toroidal
+    const dx1 = Math.abs(pos1.x - pos2.x);
+    const dx2 = WORLD_CONFIG.width - dx1;
+    const minDx = Math.min(dx1, dx2);
+
+    const dy1 = Math.abs(pos1.y - pos2.y);
+    const dy2 = WORLD_CONFIG.height - dy1;
+    const minDy = Math.min(dy1, dy2);
+
+    return Math.sqrt(minDx * minDx + minDy * minDy);
+  };
+
+  // Verifica proximidade com cálculo de distância toroidal correto
   useEffect(() => {
     const interval = setInterval(() => {
       const threshold = 8;
@@ -268,9 +285,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       let closestDistance = Infinity;
 
       GALAXY_POINTS.forEach((point) => {
-        const dx = Math.abs(shipPosRef.current.x - point.x);
-        const dy = Math.abs(shipPosRef.current.y - point.y);
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distance = getToroidalDistance(shipPosRef.current, point);
 
         if (distance < threshold && distance < closestDistance) {
           closest = point.id;
@@ -581,24 +596,28 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
         />
       </div>
 
-      {/* Indicador de status */}
+      {/* Painel simplificado */}
       <motion.div
-        className="absolute top-4 left-4 px-3 py-1 rounded-lg text-xs backdrop-blur-sm border bg-black/70 text-cyan-300 border-cyan-400/40"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        🌌 Mundo Toroidal
-      </motion.div>
-
-      {/* Coordenadas */}
-      <motion.div
-        className="absolute top-12 left-4 px-3 py-1 rounded-lg text-xs backdrop-blur-sm border bg-black/70 text-gray-300 border-gray-400/40"
+        className="absolute top-12 left-4 px-3 py-2 rounded-lg text-xs backdrop-blur-sm border bg-black/80 text-gray-300 border-gray-400/40 min-w-[200px]"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        X: {Math.round(shipPosition.x)} Y: {Math.round(shipPosition.y)}
+        <div className="font-mono space-y-1">
+          <div className="text-amber-400 font-semibold mt-2">
+            Movimento Visual:
+          </div>
+          <div>Map X: {mapX.get().toFixed(1)}</div>
+          <div>Map Y: {mapY.get().toFixed(1)}</div>
+
+          <div>
+            {isDragging
+              ? "🚀 Navegando"
+              : isDecelerating
+                ? "⚡ Desacelerando"
+                : "🛸 Parado"}
+          </div>
+        </div>
       </motion.div>
 
       {/* Ponto próximo */}
@@ -615,20 +634,6 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           <div className="text-xs text-gray-300">Clique para explorar</div>
         </motion.div>
       )}
-
-      {/* Botão reset */}
-      <button
-        onClick={resetShipPosition}
-        className="absolute top-4 right-4 text-white/90 text-xs bg-red-600/80 hover:bg-red-600/90 px-3 py-2 rounded-lg backdrop-blur-sm transition-all duration-200 border border-red-400/30"
-        title="Voltar ao centro"
-      >
-        🏠 Centro
-      </button>
-
-      {/* Dica */}
-      <div className="absolute top-4 right-24 text-white/60 text-xs bg-black/50 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/20">
-        Arraste • Mundo infinito
-      </div>
     </div>
   );
 };
