@@ -445,48 +445,76 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Estrelas de fundo com parallax simples */}
-      <motion.div
-        className="absolute inset-0 opacity-80 pointer-events-none"
-        style={{
-          x: mapX,
-          y: mapY,
-          scale: 0.8,
-        }}
-      >
-        {stars.slice(0, 75).map((star) => (
-          <div
-            key={star.id}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${star.x}%`,
-              top: `${star.y}%`,
-              animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
-            }}
-          />
-        ))}
-      </motion.div>
-
-      {/* Estrelas próximas */}
+      {/* Camada 1 - Estrelas distantes (parallax lento) */}
       <motion.div
         className="absolute inset-0 opacity-60 pointer-events-none"
         style={{
-          x: mapX,
-          y: mapY,
-          scale: 1.2,
+          transform: `translate(${mapX.get() * 0.1}px, ${mapY.get() * 0.1}px)`,
         }}
       >
-        {stars.slice(75).map((star) => (
-          <div
-            key={star.id}
-            className="absolute w-0.5 h-0.5 bg-cyan-200 rounded-full"
-            style={{
-              left: `${star.x}%`,
-              top: `${star.y}%`,
-              animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
-            }}
-          />
-        ))}
+        {stars
+          .filter((star) => star.layer === 0)
+          .map((star) => (
+            <div
+              key={`layer0-${star.id}`}
+              className="absolute bg-white rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size * 0.8}px`,
+                height: `${star.size * 0.8}px`,
+                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
+              }}
+            />
+          ))}
+      </motion.div>
+
+      {/* Camada 2 - Estrelas médias (parallax médio) */}
+      <motion.div
+        className="absolute inset-0 opacity-75 pointer-events-none"
+        style={{
+          transform: `translate(${mapX.get() * 0.3}px, ${mapY.get() * 0.3}px)`,
+        }}
+      >
+        {stars
+          .filter((star) => star.layer === 1)
+          .map((star) => (
+            <div
+              key={`layer1-${star.id}`}
+              className="absolute bg-cyan-100 rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
+              }}
+            />
+          ))}
+      </motion.div>
+
+      {/* Camada 3 - Estrelas próximas (parallax rápido) */}
+      <motion.div
+        className="absolute inset-0 opacity-90 pointer-events-none"
+        style={{
+          transform: `translate(${mapX.get() * 0.6}px, ${mapY.get() * 0.6}px)`,
+        }}
+      >
+        {stars
+          .filter((star) => star.layer === 2)
+          .map((star) => (
+            <div
+              key={`layer2-${star.id}`}
+              className="absolute bg-blue-100 rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size * 1.2}px`,
+                height: `${star.size * 1.2}px`,
+                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
+              }}
+            />
+          ))}
       </motion.div>
 
       {/* Nebulosas de fundo */}
