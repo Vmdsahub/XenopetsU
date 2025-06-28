@@ -127,14 +127,22 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const mapY = useMotionValue(0);
   const shipRotation = useMotionValue(0);
 
-  // Estrelas fixas
+  // Estados para momentum/inércia
+  const [velocity, setVelocity] = useState({ x: 0, y: 0 });
+  const [isDecelerating, setIsDecelerating] = useState(false);
+  const velocityRef = useRef({ x: 0, y: 0 });
+  const lastMoveTime = useRef(Date.now());
+
+  // Estrelas fixas - mais estrelas para preencher todo o mapa
   const stars = useMemo(() => {
-    return Array.from({ length: 150 }, (_, i) => ({
+    return Array.from({ length: 400 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
       animationDelay: Math.random() * 3,
       animationDuration: 2 + Math.random() * 2,
+      size: 0.5 + Math.random() * 1.5, // Tamanhos variados
+      layer: Math.floor(Math.random() * 3), // 3 camadas para parallax
     }));
   }, []);
 
@@ -145,6 +153,103 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   useEffect(() => {
     shipPosRef.current = shipPosition;
   }, [shipPosition]);
+
+  // Atualiza parallax das estrelas em tempo real
+  useEffect(() => {
+    const updateParallax = () => {
+      const layer1 = document.querySelectorAll('[data-star-layer="0"]');
+      const layer2 = document.querySelectorAll('[data-star-layer="1"]');
+      const layer3 = document.querySelectorAll('[data-star-layer="2"]');
+
+      const mapXValue = mapX.get();
+      const mapYValue = mapY.get();
+
+      layer1.forEach((el: any) => {
+        el.style.transform = `translate(${mapXValue * 0.1}px, ${mapYValue * 0.1}px)`;
+      });
+
+      layer2.forEach((el: any) => {
+        el.style.transform = `translate(${mapXValue * 0.3}px, ${mapYValue * 0.3}px)`;
+      });
+
+      layer3.forEach((el: any) => {
+        el.style.transform = `translate(${mapXValue * 0.6}px, ${mapYValue * 0.6}px)`;
+      });
+
+      requestAnimationFrame(updateParallax);
+    };
+
+    updateParallax();
+  }, [mapX, mapY]);
+
+  // Sistema de momentum/inércia
+  useEffect(() => {
+    velocityRef.current = velocity;
+  }, [velocity]);
+
+  // Sistema de momentum mais suave usando interpolação
+  useEffect(() => {
+    if (
+      !isDragging &&
+      (Math.abs(velocity.x) > 0.001 || Math.abs(velocity.y) > 0.001)
+    ) {
+      setIsDecelerating(true);
+
+      let animationId: number;
+
+      const applyMomentum = () => {
+        const currentVel = velocityRef.current;
+        const friction = 0.995; // Atrito muito suave para deslizamento longo
+
+        // Para quando velocidade fica muito baixa
+        if (Math.abs(currentVel.x) < 0.001 && Math.abs(currentVel.y) < 0.001) {
+          setIsDecelerating(false);
+          setVelocity({ x: 0, y: 0 });
+          return;
+        }
+
+        const newVelX = currentVel.x * friction;
+        const newVelY = currentVel.y * friction;
+
+        // Movimento muito suave - dividindo por valores maiores
+        const deltaX = newVelX * 2; // Movimento mapa
+        const deltaY = newVelY * 2;
+
+        // Atualiza posição da nave suavemente
+        const newX = wrap(
+          shipPosRef.current.x - deltaX / 16,
+          0,
+          WORLD_CONFIG.width,
+        );
+        const newY = wrap(
+          shipPosRef.current.y - deltaY / 16,
+          0,
+          WORLD_CONFIG.height,
+        );
+
+        setShipPosition({ x: newX, y: newY });
+
+        // Mapa visual move de forma muito suave
+        const newMapX = mapX.get() + deltaX;
+        const newMapY = mapY.get() + deltaY;
+
+        mapX.set(newMapX);
+        mapY.set(newMapY);
+
+        setVelocity({ x: newVelX, y: newVelY });
+
+        animationId = requestAnimationFrame(applyMomentum);
+      };
+
+      animationId = requestAnimationFrame(applyMomentum);
+
+      return () => {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+      };
+    }
+  }, [isDragging]);
 
   // Verifica proximidade - simples e direto
   useEffect(() => {
@@ -196,8 +301,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
 
+    const currentTime = Date.now();
+    const deltaTime = currentTime - lastMoveTime.current;
     const deltaX = e.clientX - lastMousePos.current.x;
     const deltaY = e.clientY - lastMousePos.current.y;
+
+    // Calcula velocidade para momentum - suave mas responsiva
+    if (deltaTime > 0) {
+      const velX = deltaX * 0.2; // Velocidade baseada diretamente no movimento
+      const velY = deltaY * 0.2;
+      setVelocity({ x: velX, y: velY });
+    }
 
     // Atualiza posição da nave
     const newX = wrap(shipPosRef.current.x - deltaX / 8, 0, WORLD_CONFIG.width);
@@ -226,14 +340,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     // Rotação
     if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 2) {
       const angle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-      animate(shipRotation, angle, { duration: 0.2 });
+      animate(shipRotation, angle, { duration: 0.1, ease: "easeOut" });
     }
 
     lastMousePos.current = { x: e.clientX, y: e.clientY };
+    lastMoveTime.current = currentTime;
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    // Não zera a velocidade aqui - deixa o momentum continuar
     localStorage.setItem(
       "xenopets-player-position",
       JSON.stringify(shipPosRef.current),
@@ -245,8 +361,17 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
 
+      const currentTime = Date.now();
+      const deltaTime = currentTime - lastMoveTime.current;
       const deltaX = e.clientX - lastMousePos.current.x;
       const deltaY = e.clientY - lastMousePos.current.y;
+
+      // Calcula velocidade para momentum - suave mas responsiva
+      if (deltaTime > 0) {
+        const velX = deltaX * 0.2;
+        const velY = deltaY * 0.2;
+        setVelocity({ x: velX, y: velY });
+      }
 
       const newX = wrap(
         shipPosRef.current.x - deltaX / 8,
@@ -277,14 +402,16 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
       if (Math.sqrt(deltaX * deltaX + deltaY * deltaY) > 2) {
         const angle = Math.atan2(-deltaY, -deltaX) * (180 / Math.PI) + 90;
-        animate(shipRotation, angle, { duration: 0.2 });
+        animate(shipRotation, angle, { duration: 0.1, ease: "easeOut" });
       }
 
       lastMousePos.current = { x: e.clientX, y: e.clientY };
+      lastMoveTime.current = currentTime;
     };
 
     const handleGlobalMouseUp = () => {
       setIsDragging(false);
+      // Não zera a velocidade aqui - deixa o momentum continuar
       localStorage.setItem(
         "xenopets-player-position",
         JSON.stringify(shipPosRef.current),
@@ -304,6 +431,8 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
 
   const resetShipPosition = () => {
     setShipPosition({ x: 50, y: 50 });
+    setVelocity({ x: 0, y: 0 });
+    setIsDecelerating(false);
     animate(mapX, 0, { duration: 0.5 });
     animate(mapY, 0, { duration: 0.5 });
     animate(shipRotation, 0, { duration: 0.5 });
@@ -344,19 +473,70 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
       }`}
       style={{ userSelect: "none" }}
     >
-      {/* Estrelas de fundo */}
-      <div className="absolute inset-0 opacity-80 pointer-events-none">
-        {stars.map((star) => (
-          <div
-            key={star.id}
-            className="absolute w-1 h-1 bg-white rounded-full"
-            style={{
-              left: `${star.x}%`,
-              top: `${star.y}%`,
-              animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
-            }}
-          />
-        ))}
+      {/* Camada 1 - Estrelas distantes (parallax lento) */}
+      <div
+        className="absolute inset-0 opacity-60 pointer-events-none"
+        data-star-layer="0"
+      >
+        {stars
+          .filter((star) => star.layer === 0)
+          .map((star) => (
+            <div
+              key={`layer0-${star.id}`}
+              className="absolute bg-white rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size * 0.8}px`,
+                height: `${star.size * 0.8}px`,
+                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
+              }}
+            />
+          ))}
+      </div>
+
+      {/* Camada 2 - Estrelas médias (parallax médio) */}
+      <div
+        className="absolute inset-0 opacity-75 pointer-events-none"
+        data-star-layer="1"
+      >
+        {stars
+          .filter((star) => star.layer === 1)
+          .map((star) => (
+            <div
+              key={`layer1-${star.id}`}
+              className="absolute bg-cyan-100 rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
+              }}
+            />
+          ))}
+      </div>
+
+      {/* Camada 3 - Estrelas próximas (parallax rápido) */}
+      <div
+        className="absolute inset-0 opacity-90 pointer-events-none"
+        data-star-layer="2"
+      >
+        {stars
+          .filter((star) => star.layer === 2)
+          .map((star) => (
+            <div
+              key={`layer2-${star.id}`}
+              className="absolute bg-blue-100 rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size * 1.2}px`,
+                height: `${star.size * 1.2}px`,
+                animation: `twinkle ${star.animationDuration}s ease-in-out ${star.animationDelay}s infinite alternate`,
+              }}
+            />
+          ))}
       </div>
 
       {/* Nebulosas de fundo */}
@@ -420,6 +600,7 @@ export const GalaxyMap: React.FC<GalaxyMapProps> = ({ onPointClick }) => {
           rotation={shipRotation}
           isNearPoint={nearbyPoint !== null}
           isDragging={isDragging}
+          isDecelerating={isDecelerating}
         />
       </div>
 
