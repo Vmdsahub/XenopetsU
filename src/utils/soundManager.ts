@@ -245,37 +245,67 @@ class EngineSound {
       this.audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
 
-      this.oscillator = this.audioContext.createOscillator();
-      this.gainNode = this.audioContext.createGain();
+      // Create multiple oscillators for richer sound
+      const osc1 = this.audioContext.createOscillator();
+      const osc2 = this.audioContext.createOscillator();
+      const osc3 = this.audioContext.createOscillator();
 
-      this.oscillator.connect(this.gainNode);
-      this.gainNode.connect(this.audioContext.destination);
+      const gain1 = this.audioContext.createGain();
+      const gain2 = this.audioContext.createGain();
+      const gain3 = this.audioContext.createGain();
+      const masterGain = this.audioContext.createGain();
 
-      // Engine sound: low frequency with subtle modulation
-      this.oscillator.type = "sawtooth";
-      this.oscillator.frequency.setValueAtTime(
-        80,
-        this.audioContext.currentTime,
-      );
+      // Connect oscillators to individual gains, then to master
+      osc1.connect(gain1);
+      osc2.connect(gain2);
+      osc3.connect(gain3);
 
-      // Add slight frequency modulation for engine rumble effect
+      gain1.connect(masterGain);
+      gain2.connect(masterGain);
+      gain3.connect(masterGain);
+      masterGain.connect(this.audioContext.destination);
+
+      // Futuristic spaceship engine: clean sine waves with harmonics
+      osc1.type = "sine";
+      osc2.type = "sine";
+      osc3.type = "triangle";
+
+      // Base frequency and harmonics for spaceship hum
+      osc1.frequency.setValueAtTime(120, this.audioContext.currentTime);
+      osc2.frequency.setValueAtTime(240, this.audioContext.currentTime); // octave
+      osc3.frequency.setValueAtTime(180, this.audioContext.currentTime); // fifth
+
+      // Subtle modulation for alive engine feeling
       const lfo = this.audioContext.createOscillator();
       const lfoGain = this.audioContext.createGain();
       lfo.connect(lfoGain);
-      lfoGain.connect(this.oscillator.frequency);
+      lfoGain.connect(osc1.frequency);
+      lfoGain.connect(osc2.frequency);
 
-      lfo.frequency.setValueAtTime(8, this.audioContext.currentTime);
-      lfoGain.gain.setValueAtTime(15, this.audioContext.currentTime);
+      lfo.type = "sine";
+      lfo.frequency.setValueAtTime(3, this.audioContext.currentTime);
+      lfoGain.gain.setValueAtTime(8, this.audioContext.currentTime);
 
-      // Volume envelope
-      this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-      this.gainNode.gain.linearRampToValueAtTime(
-        0.08,
-        this.audioContext.currentTime + 0.1,
+      // Individual oscillator volumes
+      gain1.gain.setValueAtTime(0.04, this.audioContext.currentTime);
+      gain2.gain.setValueAtTime(0.02, this.audioContext.currentTime);
+      gain3.gain.setValueAtTime(0.015, this.audioContext.currentTime);
+
+      // Master volume envelope
+      masterGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+      masterGain.gain.linearRampToValueAtTime(
+        1,
+        this.audioContext.currentTime + 0.2,
       );
 
-      this.oscillator.start();
+      osc1.start();
+      osc2.start();
+      osc3.start();
       lfo.start();
+
+      // Store references for cleanup
+      this.oscillator = osc1; // Keep reference for stop method
+      this.gainNode = masterGain;
       this.isPlaying = true;
     } catch (error) {
       console.warn("Engine sound failed to start:", error);
